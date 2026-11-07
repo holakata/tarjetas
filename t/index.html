@@ -3,80 +3,129 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#F6F4F0">
+<meta name="theme-color" content="#123A5E">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Mi tarjeta</title>
 <link rel="stylesheet" href="../comun.css">
 <style>
-  .app { max-width: 460px; margin: 0 auto; padding: 22px 18px 60px; }
-  .cab { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
-  .mono { width: 46px; height: 46px; border-radius: 14px; background: var(--marca); color: #fff; display: grid; place-items: center; font-family: "Gloock", serif; font-size: 24px; flex: none; }
-  .cab h1 { font-family: "Gloock", serif; font-weight: 400; font-size: 24px; line-height: 1.1; }
-  .cab p { font-size: 13px; color: var(--tinta-2); }
+  body { background: var(--fondo); overflow-x: hidden; }
+  .cielo { position: absolute; inset: 0 0 auto 0; height: 300px; background: radial-gradient(120% 90% at 85% 0%, color-mix(in srgb, var(--marca) 85%, #fff 15%) 0%, var(--marca-2) 70%); border-radius: 0 0 36px 36px; z-index: 0; }
+  .app { position: relative; z-index: 1; max-width: 460px; margin: 0 auto; padding: calc(18px + env(safe-area-inset-top)) 0 60px; }
+  .cab { display: flex; align-items: center; gap: 12px; padding: 0 20px; color: #fff; }
+  .mono { width: 44px; height: 44px; border-radius: 14px; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28); display: grid; place-items: center; font-family: "Gloock", serif; font-size: 22px; flex: none; }
+  .cab h1 { font-family: "Gloock", serif; font-weight: 400; font-size: 21px; line-height: 1.1; }
+  .cab p { font-size: 12px; opacity: .75; }
+  .ico { margin-left: auto; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,.14); color: #fff; display: grid; place-items: center; cursor: pointer; }
+  .ico svg { width: 22px; height: 22px; }
+  .hola { padding: 18px 20px 14px; color: #fff; font-size: 15px; opacity: .92; }
+  .hola b { font-weight: 600; }
 
-  .tarjeta { position: relative; border-radius: 26px; overflow: hidden; color: #fff; background: var(--marca-2); box-shadow: 0 2px 4px rgba(18,58,94,.12), 0 18px 40px rgba(18,58,94,.22); }
-  .tarjeta .arriba { padding: 22px 22px 18px; background: linear-gradient(160deg, var(--marca) 0%, var(--marca-2) 100%); }
-  .tarjeta .fila-t { display: flex; justify-content: space-between; align-items: flex-start; }
-  .tarjeta .lbl { font-size: 13px; opacity: .75; }
-  .tarjeta .nom { font-size: 20px; font-weight: 600; margin-top: 2px; }
-  .tarjeta .cuenta { text-align: right; }
-  .tarjeta .cuenta b { font-family: "Gloock", serif; font-weight: 400; font-size: 34px; line-height: 1; }
-  .tarjeta .cuenta span { font-size: 15px; opacity: .8; }
-  .sellos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 4px 22px 22px; background: var(--marca-2); }
-  .sellos.m8 { grid-template-columns: repeat(4, 1fr); }
-  .sello { aspect-ratio: 1; border-radius: 50%; border: 2px dashed rgba(255,255,255,.35); display: grid; place-items: center; font-size: 12px; color: rgba(255,255,255,.6); transition: transform .4s cubic-bezier(.3,1.6,.5,1); }
-  .sello.lleno { border: 0; background: #fff; color: var(--marca-2); }
-  .sello.lleno svg { width: 46%; height: 46%; }
-  .sello.nuevo { animation: pop .6s cubic-bezier(.3,1.6,.5,1); }
-  .sello.premio { border-style: solid; border-color: rgba(255,255,255,.7); font-weight: 600; color: #fff; text-align: center; line-height: 1.1; padding: 6px; }
-  @keyframes pop { 0% { transform: scale(.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-  .pie-t { display: flex; justify-content: space-between; padding: 14px 22px; background: rgba(0,0,0,.18); font-size: 13px; }
+  .wallet { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 20px 18px; scrollbar-width: none; }
+  .wallet::-webkit-scrollbar { display: none; }
+  .pase { flex: 0 0 calc(100% - 36px); scroll-snap-align: center; perspective: 1400px; }
+  .wallet.uno .pase { flex-basis: 100%; }
+  .giro { position: relative; height: 236px; transform-style: preserve-3d; transition: transform .7s cubic-bezier(.2,.8,.2,1); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .giro:active { scale: .985; }
+  .pase.vuelta .giro { transform: rotateY(180deg); }
+  .cara { position: absolute; inset: 0; border-radius: 24px; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; box-shadow: 0 2px 4px rgba(10,20,40,.10), 0 22px 40px rgba(10,20,40,.22); }
+  .cara.atras { transform: rotateY(180deg); background: #fff; color: var(--tinta); display: flex; align-items: center; gap: 16px; padding: 18px; }
+  .atras .qr { width: 146px; flex: none; } .atras .qr svg { width: 100%; height: auto; display: block; }
+  .atras h3 { font-size: 16px; margin-bottom: 6px; } .atras p { font-size: 13px; color: var(--tinta-2); line-height: 1.4; }
+  .atras .cod { font-family: ui-monospace, Menlo, monospace; font-size: 19px; letter-spacing: .14em; font-weight: 700; margin-top: 4px; color: var(--tinta); }
+  .atras .num { display: block; margin: 2px 0 8px; font-weight: 700; font-size: 17px; color: var(--tinta); }
+  .atras .mini { font-size: 11px; color: #9AA1AA; margin-top: 10px; display: flex; align-items: center; gap: 5px; }
+  .atras .mini svg { width: 12px; height: 12px; }
 
-  .bloque { background: var(--blanco); border-radius: var(--radio); padding: 20px; margin-top: 16px; box-shadow: var(--sombra); }
-  .bloque h2 { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
-  .premio-listo { background: var(--fondo-marca); border: 1.5px solid var(--marca); }
-  .premio-listo h2 { color: var(--marca-2); }
-  .premio-listo .btn { margin-top: 14px; }
-  .faltan { font-size: 15px; color: var(--tinta-2); margin-top: 14px; text-align: center; }
-  .faltan b { color: var(--tinta); }
+  .sellos-f { background: linear-gradient(150deg, var(--marca) 0%, var(--marca-2) 78%); color: #fff; padding: 18px 20px; display: flex; flex-direction: column; }
+  .sellos-f::after { content: ""; position: absolute; right: -60px; bottom: -80px; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, rgba(255,255,255,.14), transparent 70%); pointer-events: none; }
+  .f-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .f-top small { font-size: 12px; opacity: .8; display: block; }
+  .f-top b { font-size: 18px; font-weight: 600; }
+  .cuenta { font-family: "Gloock", serif; font-size: 34px; line-height: 1; text-align: right; }
+  .cuenta span { font-family: "Inst", sans-serif; font-size: 14px; opacity: .75; }
+  .grid { margin-top: auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .grid.m8 { grid-template-columns: repeat(8, 1fr); } .grid.m10 { grid-template-columns: repeat(5, 1fr); }
+  .s { aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed rgba(255,255,255,.45); display: grid; place-items: center; }
+  .s.on { border: 0; background: #fff; color: var(--marca-2); box-shadow: 0 4px 10px rgba(0,0,0,.15); }
+  .s.on svg { width: 52%; height: 52%; }
+  .s.meta { border-style: solid; border-color: rgba(255,255,255,.85); }
+  .s.meta svg { width: 50%; height: 50%; color: #fff; opacity: .9; }
+  .s.nuevo { animation: pop .7s cubic-bezier(.3,1.7,.5,1); }
+  @keyframes pop { 0% { transform: scale(.2); opacity: 0; } 60% { transform: scale(1.18); } 100% { transform: scale(1); opacity: 1; } }
+  .f-pie { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+  .f-pie > span:first-child { opacity: .85; }
+  .voltear { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.18); padding: 6px 11px; border-radius: 999px; font-weight: 600; }
+  .voltear svg { width: 14px; height: 14px; }
 
-  .hist li { list-style: none; display: flex; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--linea); font-size: 15px; }
-  .hist li:first-child { border-top: 0; }
-  .hist li span:last-child { color: var(--tinta-2); }
+  .vip-f { background: linear-gradient(155deg, #2A2C31 0%, #111214 100%); color: #F4EBDD; padding: 18px 20px; display: flex; flex-direction: column; }
+  .vip-f::after { content: ""; position: absolute; right: -50px; top: -50px; width: 190px; height: 190px; border-radius: 50%; border: 1.5px solid rgba(214,182,128,.35); box-shadow: 0 0 0 26px rgba(214,182,128,.05); pointer-events: none; }
+  .vip-f small { color: #D6B680; font-size: 12px; }
+  .vip-f h3 { font-family: "Gloock", serif; font-weight: 400; font-size: 28px; line-height: 1.05; margin-top: 2px; }
+  .vip-f .vig { font-size: 13px; opacity: .75; margin-top: 4px; }
+  .vip-f .ben { margin-top: auto; font-size: 13px; line-height: 1.55; }
+  .vip-f .ben span { display: block; } .vip-f .ben span::before { content: "·"; color: #D6B680; font-weight: 700; margin-right: 8px; }
+  .vip-f .voltear { background: rgba(214,182,128,.18); color: #F4EBDD; }
 
-  .canje { position: fixed; inset: 0; background: rgba(17,24,33,.55); display: flex; align-items: flex-end; justify-content: center; z-index: 50; }
-  .hoja { background: var(--blanco); width: 100%; max-width: 460px; border-radius: 26px 26px 0 0; padding: 26px 22px calc(26px + env(safe-area-inset-bottom)); text-align: center; animation: sube .35s ease; }
-  @keyframes sube { from { transform: translateY(40px); opacity: 0; } }
-  .hoja h3 { font-size: 20px; margin-bottom: 4px; }
-  .hoja .qr { margin: 18px auto 10px; width: 220px; }
-  .hoja .qr svg { width: 100%; height: auto; display: block; }
-  .codigo { font-family: ui-monospace, Menlo, monospace; font-size: 30px; letter-spacing: .18em; font-weight: 700; margin-bottom: 6px; }
-  .hecho { padding: 30px 0 10px; }
-  .hecho .circ { width: 74px; height: 74px; border-radius: 50%; background: var(--ok); color: #fff; display: grid; place-items: center; margin: 0 auto 14px; animation: pop .6s cubic-bezier(.3,1.6,.5,1); }
+  .puntos-n { display: flex; justify-content: center; gap: 6px; margin-top: -4px; }
+  .puntos-n i { width: 7px; height: 7px; border-radius: 4px; background: #C9CDD3; transition: all .3s; }
+  .puntos-n i.on { width: 20px; background: var(--marca-2); }
 
-  .formu h2 { font-family: "Gloock", serif; font-weight: 400; font-size: 28px; line-height: 1.1; margin-bottom: 6px; }
-  .formu > p { color: var(--tinta-2); margin-bottom: 20px; }
-  .aviso-sello { background: var(--fondo-marca); border-radius: 14px; padding: 12px 14px; font-size: 14px; margin-bottom: 18px; color: var(--marca-2); font-weight: 600; }
+  .cuerpo { padding: 14px 20px 0; }
+  .progreso { background: #fff; border-radius: 20px; padding: 16px 18px; box-shadow: var(--sombra); }
+  .progreso p { font-size: 15px; } .progreso p b { font-weight: 700; }
+  .barra { height: 8px; background: #ECE8E1; border-radius: 4px; margin-top: 12px; overflow: hidden; }
+  .barra i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--marca), var(--marca-2)); border-radius: 4px; transition: width 1.2s cubic-bezier(.2,.8,.2,1); }
+
+  .avisos { display: grid; gap: 10px; margin-top: 12px; }
+  .aviso { display: flex; align-items: center; gap: 14px; background: #fff; border-radius: 20px; padding: 14px 16px; box-shadow: var(--sombra); border: 0; width: 100%; text-align: left; cursor: pointer; position: relative; overflow: hidden; font: inherit; color: inherit; }
+  .aviso::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--marca); }
+  .aviso .ic { width: 42px; height: 42px; border-radius: 14px; background: var(--fondo-marca); color: var(--marca-2); display: grid; place-items: center; flex: none; }
+  .aviso .ic svg { width: 22px; height: 22px; }
+  .aviso b { display: block; font-size: 15px; } .aviso span span { font-size: 13px; color: var(--tinta-2); }
+  .aviso .fl { margin-left: auto; color: var(--tinta-2); display: grid; }
+  .aviso.brilla .ic { animation: latido 2.4s ease-in-out infinite; }
+  @keyframes latido { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+
+  .acciones-r { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .acc { background: #fff; border: 0; border-radius: 20px; padding: 14px 6px 12px; box-shadow: var(--sombra); display: flex; flex-direction: column; align-items: center; gap: 8px; font: inherit; font-size: 13px; font-weight: 600; color: var(--tinta); cursor: pointer; transition: transform .15s; }
+  .acc:active { transform: scale(.95); }
+  .acc .ic { width: 42px; height: 42px; border-radius: 50%; background: var(--fondo-marca); color: var(--marca-2); display: grid; place-items: center; }
+  .acc .ic svg { width: 21px; height: 21px; }
+  .acc.dorado .ic { background: #23262B; color: #D6B680; }
+
+  .velo { position: fixed; inset: 0; background: rgba(12,18,28,.5); z-index: 50; display: flex; align-items: flex-end; justify-content: center; opacity: 0; transition: opacity .25s; }
+  .velo.ver { opacity: 1; }
+  .hoja { background: #fff; width: 100%; max-width: 460px; border-radius: 28px 28px 0 0; padding: 12px 22px calc(24px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform .35s cubic-bezier(.2,.8,.2,1); max-height: 86vh; overflow-y: auto; }
+  .velo.ver .hoja { transform: none; }
+  .asa { width: 40px; height: 5px; border-radius: 3px; background: #DDD8D0; margin: 0 auto 16px; }
+  .hoja h3 { font-size: 21px; margin-bottom: 6px; }
+  .hoja .qr { width: 210px; margin: 16px auto 8px; } .hoja .qr svg { width: 100%; height: auto; display: block; }
+  .hoja .codigo { font-family: ui-monospace, Menlo, monospace; font-size: 28px; letter-spacing: .18em; font-weight: 700; text-align: center; }
+  .hist { padding: 0; } .hist li { list-style: none; display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--linea); font-size: 15px; }
+  .hist li:first-child { border-top: 0; } .hist li span:last-child { color: var(--tinta-2); }
+  .lista-b { padding: 0; } .lista-b li { list-style: none; padding: 9px 0 9px 26px; position: relative; font-size: 15px; }
+  .lista-b li::before { content: ""; position: absolute; left: 4px; top: 16px; width: 9px; height: 9px; border-radius: 50%; background: #D6B680; }
+  .pasos { padding: 0; } .pasos li { list-style: none; display: flex; gap: 12px; padding: 10px 0; font-size: 15px; align-items: flex-start; }
+  .pasos li i { font-style: normal; width: 26px; height: 26px; border-radius: 50%; background: var(--fondo-marca); color: var(--marca-2); display: grid; place-items: center; font-weight: 700; font-size: 13px; flex: none; }
+  .precio { font-family: "Gloock", serif; font-size: 30px; margin-top: 10px; }
+  .precio span { font-family: "Inst", sans-serif; font-size: 14px; color: var(--tinta-2); }
+  .hecho { text-align: center; padding: 20px 0 6px; }
+  .hecho .circ { width: 72px; height: 72px; border-radius: 50%; background: var(--ok); color: #fff; display: grid; place-items: center; margin: 0 auto 12px; animation: pop .6s cubic-bezier(.3,1.6,.5,1); }
+
+  .formu { background: #fff; border-radius: 26px; padding: 24px 20px; margin: 0 16px; box-shadow: 0 2px 4px rgba(10,20,40,.08), 0 22px 40px rgba(10,20,40,.16); }
+  .formu h2 { font-family: "Gloock", serif; font-weight: 400; font-size: 27px; line-height: 1.1; margin-bottom: 6px; }
+  .formu > p { color: var(--tinta-2); margin-bottom: 18px; font-size: 15px; }
+  .aviso-sello { background: var(--fondo-marca); border-radius: 14px; padding: 12px 14px; font-size: 14px; margin-bottom: 16px; color: var(--marca-2); font-weight: 600; }
   .pin { letter-spacing: .5em; text-align: center; font-size: 22px; font-weight: 700; }
-  .vipcard { position: relative; border-radius: 22px; padding: 20px 22px; margin-top: 16px; color: #F4EBDD; background: linear-gradient(155deg, #23262B 0%, #121315 100%); box-shadow: 0 14px 34px rgba(0,0,0,.25); overflow: hidden; }
-  .vipcard::after { content: ""; position: absolute; right: -40px; top: -40px; width: 160px; height: 160px; border-radius: 50%; border: 1.5px solid rgba(214,182,128,.35); }
-  .vipcard .lbl { font-size: 13px; color: #D6B680; }
-  .vipcard h3 { font-family: "Gloock", serif; font-weight: 400; font-size: 26px; margin: 2px 0 2px; }
-  .vipcard .vig { font-size: 14px; opacity: .8; }
-  .vipcard ul, .club ul { list-style: none; margin: 14px 0 0; }
-  .vipcard li, .club li { padding: 7px 0 7px 22px; position: relative; font-size: 15px; }
-  .vipcard li::before, .club li::before { content: ""; position: absolute; left: 2px; top: 14px; width: 8px; height: 8px; border-radius: 50%; background: #D6B680; }
-  .vipcard .btn { background: #D6B680; color: #17181B; margin-top: 16px; }
-  .club .precio { font-family: "Gloock", serif; font-size: 26px; margin-top: 12px; }
-  .club .precio span { font-family: "Inst", sans-serif; font-size: 14px; color: var(--tinta-2); }
-  .miqr { text-align: center; }
-  .miqr .qr { width: 200px; margin: 14px auto 8px; } .miqr .qr svg { width: 100%; height: auto; display: block; }
-  .kata { text-align: center; font-size: 12px; color: #9AA1AA; margin-top: 34px; }
+  .kata { text-align: center; font-size: 12px; color: #9AA1AA; margin-top: 30px; }
 </style>
 </head>
 <body>
+<div class="cielo"></div>
 <div class="app">
-  <header class="cab oculto" id="cab"><div class="mono" id="mono"></div><div><h1 id="neg"></h1><p id="sub"></p></div></header>
-  <main id="vista"><p class="cargando">Abriendo tu tarjeta…</p></main>
+  <header class="cab oculto" id="cab"><div class="mono" id="mono"></div><div><h1 id="neg"></h1><p id="sub"></p></div>
+    <button class="ico oculto" id="btnGuardar" aria-label="Guardar en el celular" onclick="hojaGuardar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M12 8v6M9 11.5l3 3 3-3"/></svg></button></header>
+  <main id="vista"><p class="cargando" style="color:#fff">Abriendo tu tarjeta…</p></main>
   <p class="kata">Tarjeta hecha por Kata Studio</p>
 </div>
 
@@ -87,31 +136,42 @@
 const slug = params.get('n') || 'jazmin';
 const tokenQR = params.get('q');
 const CLAVE = 'kata-tarjeta-' + slug;
+if (params.get('k')) store.set(CLAVE, params.get('k'));
 let NEG = null, ESTADO = null, sondeo = null, qrTimer = null, vigia = null;
 const MODO = () => (NEG && NEG.config.modo) || 'cliente';
-const conBotones = () => MODO() !== 'recepcion';
-const conMiQR = () => MODO() !== 'cliente';
+const recep = () => MODO() !== 'cliente';
 
-const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.2L19 7"/></svg>';
+const I = {
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.2L19 7"/></svg>',
+  regalo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12M12 8c-1.5-3-5-3.5-5-1.3C7 8 9.5 8 12 8zm0 0c1.5-3 5-3.5 5-1.3C17 8 14.5 8 12 8z"/></svg>',
+  pastel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M5 20v-6a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v6M5 16c2 1 3-1 4.5 0s2.5 1 3.5 0 2.5-1 3.5 0 2.5 0 2.5 0M12 12V8M12 5.5c.8-.9.8-1.7 0-2.5-.8.8-.8 1.6 0 2.5z"/></svg>',
+  reloj: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  corona: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16M5 15l-1.5-8 5 4L12 5l3.5 6 5-4L19 15z"/></svg>',
+  cel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M12 8v6M9 11.5l3 3 3-3"/></svg>',
+  giro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 9M20 4v5h-5M20 12a8 8 0 0 1-13.7 5.6L4 15M4 20v-5h5"/></svg>',
+  qr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="6" height="6" rx="1"/><rect x="14.5" y="3.5" width="6" height="6" rx="1"/><rect x="3.5" y="14.5" width="6" height="6" rx="1"/><path d="M14.5 14.5h2v2M20.5 14.5v6h-6v-3"/></svg>',
+  fl: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+};
 
 async function iniciar() {
   try {
     NEG = await rpc('negocio_info', { p_slug: slug });
-    if (!NEG) { $('#vista').innerHTML = '<p class="cargando">No encontramos este negocio.</p>'; return; }
+    if (!NEG) { $('#vista').innerHTML = '<p class="cargando" style="color:#fff">No encontramos este negocio.</p>'; return; }
     aplicarMarca(NEG.config);
     document.title = 'Mi tarjeta · ' + NEG.nombre;
     $('#neg').textContent = NEG.nombre; $('#sub').textContent = NEG.config.subtitulo || '';
     $('#mono').textContent = NEG.nombre.trim()[0];
     $('#cab').classList.remove('oculto');
+    if (params.get('k')) history.replaceState(null, '', location.pathname + '?n=' + encodeURIComponent(slug));
     const key = store.get(CLAVE);
     if (key) {
       ESTADO = await rpc('cliente_estado', { p_key: key });
       if (!ESTADO) { store.del(CLAVE); return registro(); }
       if (tokenQR) return sumar(key);
-      return tarjeta();
+      return pintar();
     }
     registro();
-  } catch (e) { $('#vista').innerHTML = `<p class="cargando">${esc(msg(e))}</p>`; }
+  } catch (e) { $('#vista').innerHTML = `<p class="cargando" style="color:#fff">${esc(msg(e))}</p>`; }
 }
 
 function limpiarURL() { if (tokenQR) history.replaceState(null, '', location.pathname + '?n=' + encodeURIComponent(slug)); }
@@ -119,159 +179,182 @@ function limpiarURL() { if (tokenQR) history.replaceState(null, '', location.pat
 async function sumar(key) {
   try {
     const r = await rpc('sumar_sello', { p_key: key, p_token: tokenQR });
-    ESTADO = r.estado; limpiarURL();
-    tarjeta(true);
-    if (r.premio_nuevo) toast('Completaste tu tarjeta. Tu premio está listo.', 'ok');
-    else toast(r.sumados > 1 ? 'Hoy tu visita vale doble: +2 sellos' : 'Sello agregado. Gracias por volver.', 'ok');
-    if (ESTADO.vip && ESTADO.vip.miembro) mostrarVipPago();
-  } catch (e) { limpiarURL(); tarjeta(); toast(msg(e), e.code === 'hoy' ? '' : 'mal'); }
+    ESTADO = r.estado; limpiarURL(); pintar(true);
+    celebrar(r.premio_nuevo ? 'Completaste tu tarjeta. Tu premio está listo.' : r.sumados > 1 ? 'Hoy tu visita vale doble: +2 sellos' : 'Sello agregado. Gracias por volver.');
+  } catch (e) { limpiarURL(); pintar(); toast(msg(e), e.code === 'hoy' ? '' : 'mal'); }
 }
 
-function tarjeta(animar = false) {
-  const E = ESTADO, meta = E.meta;
+function celebrar(t) { toast(t, 'ok'); try { navigator.vibrate && navigator.vibrate([18, 40, 18]); } catch (e) {} }
+
+/* ---------- Pantalla principal ---------- */
+function pintar(animar = false) {
+  const E = ESTADO, meta = E.meta, V = E.vip;
   const llenos = E.premios_listos > 0 && E.sellos === 0 ? meta : E.sellos;
+  const faltan = meta - E.sellos;
   let celdas = '';
   for (let i = 1; i <= meta; i++) {
-    const lleno = i <= llenos;
-    const nuevo = animar && i === llenos;
-    if (lleno) celdas += `<div class="sello lleno${nuevo ? ' nuevo' : ''}">${CHECK}</div>`;
-    else if (i === meta) celdas += `<div class="sello premio">Premio</div>`;
-    else celdas += `<div class="sello">${i}</div>`;
+    if (i <= llenos) celdas += `<div class="s on${animar && i === llenos ? ' nuevo' : ''}">${I.check}</div>`;
+    else if (i === meta) celdas += `<div class="s meta">${I.regalo}</div>`;
+    else celdas += `<div class="s"></div>`;
   }
-  const faltan = meta - E.sellos;
-  let extra = '';
-  const cb = conBotones();
-  if (E.premios_listos > 0) extra += `<section class="bloque premio-listo"><h2>Tu premio está listo</h2><p>${esc(E.premio || 'Tu premio')}. ${cb ? 'Tócalo cuando estés en recepción.' : 'Te lo entregan en recepción cuando pagues.'}</p>${cb ? `<button class="btn ancho" onclick="pedir('premio')">Usar mi premio</button>` : ''}</section>`;
-  if (E.cumple_regalo) extra += `<section class="bloque premio-listo"><h2>Feliz cumpleaños, ${esc(E.nombre.split(' ')[0])}</h2><p>${esc(E.cumple_regalo)}. Es tuyo durante todo este mes${cb ? '.' : '; pídelo en recepción.'}</p>${cb ? `<button class="btn ancho" onclick="pedir('cumple')">Usar mi regalo</button>` : ''}</section>`;
-  const miqr = conMiQR() ? `<section class="bloque miqr"><h2>En recepción</h2><p class="nota">Al pagar, solo di tu número de WhatsApp y te suman la visita${E.vip ? ' y aplican tus beneficios' : ''}. Si prefieres, muéstrales este código.</p><div class="qr" id="miqr"><p class="nota">Cargando…</p></div><div class="codigo" id="micod"></div></section>` : '';
-  const hist = E.visitas.length ? E.visitas.map((v) => `<li><span>${fechaCorta(v.fecha)}</span><span>${v.sellos > 1 ? '+2 sellos' : '+1 sello'}</span></li>`).join('') : '<li><span>Todavía no tienes visitas.</span><span></span></li>';
+  const atras = (titulo) => `<div class="cara atras"><div class="qr" data-qr></div><div>
+    <h3>${titulo}</h3><p>Al pagar, di tu número</p><span class="num">${esc(telBonito(E.tel || ''))}</span>
+    <p>o muestra este código</p><div class="cod" data-cod>······</div>
+    <div class="mini">${I.giro} Toca para voltear</div></div></div>`;
+  const pSellos = `<div class="pase" id="p0"><div class="giro" onclick="voltear(this)">
+      <div class="cara sellos-f"><div class="f-top"><div><small>Tarjeta de cliente</small><b>${esc(E.nombre)}</b></div><div class="cuenta">${llenos}<span> / ${meta}</span></div></div>
+        <div class="grid${meta > 6 ? (meta > 8 ? ' m10' : ' m8') : ''}">${celdas}</div>
+        <div class="f-pie"><span>${esc(E.premio || '')}</span>${recep() ? `<span class="voltear">${I.qr} Mi código</span>` : ''}</div></div>
+      ${recep() ? atras('Tu código') : ''}</div></div>`;
+  const pVip = V && V.miembro ? `<div class="pase" id="p1"><div class="giro" onclick="voltear(this)">
+      <div class="cara vip-f"><small>Miembro</small><h3>${esc(V.nombre)}</h3><div class="vig">${V.hasta ? 'Activa hasta el ' + fechaCorta(V.hasta) : 'Membresía activa'}</div>
+        <div class="ben">${(V.beneficios || []).slice(0, 3).map((b) => `<span>${esc(b)}</span>`).join('')}</div>
+        <div class="f-pie" style="justify-content:flex-end"><span class="voltear">${I.qr} ${recep() ? 'Mi código' : 'Mostrar'}</span></div></div>
+      ${recep() ? atras(esc(V.nombre)) : ''}</div></div>` : '';
+
+  const avisos = [];
+  if (E.premios_listos > 0) avisos.push(`<button class="aviso brilla" onclick="hojaPremio('premio')"><span class="ic">${I.regalo}</span><span><b>Tu premio está listo</b><span>${esc(E.premio || '')}</span></span><span class="fl">${I.fl}</span></button>`);
+  if (E.cumple_regalo) avisos.push(`<button class="aviso brilla" onclick="hojaPremio('cumple')"><span class="ic">${I.pastel}</span><span><b>Feliz cumpleaños, ${esc(E.nombre.split(' ')[0])}</b><span>${esc(E.cumple_regalo)}</span></span><span class="fl">${I.fl}</span></button>`);
+
+  const pct = Math.round((llenos / meta) * 100);
+  const frase = E.premios_listos > 0 ? `Completaste tu tarjeta. <b>${esc(E.premio || 'Tu premio')}</b> te espera.`
+    : `${E.hoy_sellado ? 'Visita de hoy sumada. ' : ''}Te ${faltan === 1 ? 'falta <b>1 visita</b>' : `faltan <b>${faltan} visitas</b>`} para tu ${esc((E.premio || 'premio').toLowerCase())}.`;
+
+  $('#btnGuardar').classList.remove('oculto');
   $('#vista').innerHTML = `
-    <section class="tarjeta">
-      <div class="arriba"><div class="fila-t"><div><div class="lbl">Cliente</div><div class="nom">${esc(E.nombre)}</div></div>
-      <div class="cuenta"><b>${llenos}</b><span> / ${meta}</span></div></div></div>
-      <div class="sellos${meta > 6 ? ' m8' : ''}">${celdas}</div>
-      <div class="pie-t"><span>Premio: ${esc(E.premio || '')}</span></div>
-    </section>
-    ${guardarHTML()}
-    ${miqr}
-    ${extra}
-    ${vipHTML(E)}
-    ${E.premios_listos > 0 ? '' : `<p class="faltan">${E.hoy_sellado ? 'Ya sumaste tu sello de hoy. ' : ''}Te ${faltan === 1 ? 'falta <b>1 visita</b>' : `faltan <b>${faltan} visitas</b>`} para tu premio.</p>`}
-    <section class="bloque"><h2>Tus visitas</h2><ul class="hist">${hist}</ul></section>
-    <section class="bloque"><h2>¿Cómo sumo un sello?</h2><p class="nota">${MODO() === 'recepcion' ? 'En cada visita, al pagar, di tu número de WhatsApp en recepción y te suman el sello.' : MODO() === 'ambos' ? 'En cada visita, escanea el QR de recepción o muéstrales tu código al pagar. Se suma uno por día.' : 'En cada visita, escanea con la cámara el QR que está en recepción. Se suma uno por día.'}</p></section>`;
-  if (conMiQR()) { cargarQR(); vigilar(); }
+    <p class="hola">Hola, <b>${esc(E.nombre.split(' ')[0])}</b></p>
+    <div class="wallet${pVip ? '' : ' uno'}" id="wallet">${pSellos}${pVip}</div>
+    ${pVip ? '<div class="puntos-n" id="pn"><i class="on"></i><i></i></div>' : ''}
+    <div class="cuerpo">
+      <div class="progreso"><p>${frase}</p><div class="barra"><i id="bar"></i></div></div>
+      ${avisos.length ? `<div class="avisos">${avisos.join('')}</div>` : ''}
+      <div class="acciones-r"${V ? '' : ' style="grid-template-columns:repeat(2,1fr)"'}>
+        <button class="acc" onclick="hojaVisitas()"><span class="ic">${I.reloj}</span>Mis visitas</button>
+        ${V ? `<button class="acc dorado" onclick="hojaClub()"><span class="ic">${I.corona}</span>${V.miembro ? 'Beneficios' : 'Club'}</button>` : ''}
+        <button class="acc" onclick="hojaGuardar()"><span class="ic">${I.cel}</span>Guardar</button>
+      </div>
+    </div>`;
+  requestAnimationFrame(() => setTimeout(() => { const b = $('#bar'); if (b) b.style.width = pct + '%'; }, 120));
+  const w = $('#wallet');
+  if (w && pVip) w.onscroll = () => { const i = w.scrollLeft > (w.scrollWidth - w.clientWidth) / 2 ? 1 : 0; $$('#pn i').forEach((d, k) => d.classList.toggle('on', k === i)); };
+  if (recep()) { cargarQR(); vigilar(); }
+  if (!store.get('kata-vio-guardar-' + slug)) { store.set('kata-vio-guardar-' + slug, '1'); setTimeout(hojaGuardar, 1500); }
 }
 
-function guardarHTML() {
-  if (store.get('kata-guardada-' + slug)) return '';
-  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  return `<section class="bloque" id="guardar" style="border:1.5px dashed var(--linea);box-shadow:none"><h2>Guarda tu tarjeta en el celular</h2>
-    <p class="nota">${ios ? 'Toca el botón de compartir (el cuadrito con la flecha) y luego <b>Agregar a pantalla de inicio</b>.' : 'Toca los tres puntitos del navegador y luego <b>Agregar a pantalla principal</b>.'} Así la abres como una app, sin buscar el enlace.</p>
-    <button class="enlace" onclick="store.set('kata-guardada-${slug}','1');$('#guardar').remove()">Ya la guardé</button></section>`;
+function voltear(el) {
+  if (!recep()) { if (el.closest('#p1')) pedir('vip'); return; }
+  el.parentElement.classList.toggle('vuelta');
+  try { navigator.vibrate && navigator.vibrate(10); } catch (e) {}
 }
 
 async function cargarQR() {
   clearTimeout(qrTimer);
   try {
     const r = await rpc('cliente_qr', { p_key: store.get(CLAVE) });
-    const box = $('#miqr'); if (!box) return;
-    box.innerHTML = qrSVG(r.codigo, 220); $('#micod').textContent = r.codigo;
-    const ms = Math.max(30000, new Date(r.expira) - Date.now() - 55000);
-    qrTimer = setTimeout(cargarQR, ms);
-  } catch (e) { const box = $('#miqr'); if (box) box.innerHTML = `<p class="nota">${esc(msg(e))}</p>`; qrTimer = setTimeout(cargarQR, 15000); }
+    $$('[data-qr]').forEach((b) => (b.innerHTML = qrSVG(r.codigo, 200)));
+    $$('[data-cod]').forEach((b) => (b.textContent = r.codigo));
+    qrTimer = setTimeout(cargarQR, Math.max(30000, new Date(r.expira) - Date.now() - 55000));
+  } catch (e) { qrTimer = setTimeout(cargarQR, 15000); }
 }
 
-function huella(E) { return [E.sellos, E.premios_listos, E.visitas.length, !!E.cumple_regalo, E.vip && E.vip.miembro, E.vip && E.vip.hasta].join('|'); }
+function huella(E) { return [E.sellos, E.premios_listos, E.visitas.length, E.visitas[0] && E.visitas[0].fecha, !!E.cumple_regalo, E.vip && E.vip.miembro, E.vip && E.vip.hasta].join('|'); }
 function vigilar() {
   clearInterval(vigia);
   vigia = setInterval(async () => {
-    if (document.hidden || $('#capa')) return;
+    if (document.hidden || $('.velo')) return;
     const e = await rpc('cliente_estado', { p_key: store.get(CLAVE) }).catch(() => null);
     if (!e || huella(e) === huella(ESTADO)) return;
     const antes = ESTADO; ESTADO = e;
-    const nuevaVisita = e.visitas.length > antes.visitas.length || (e.visitas[0] && antes.visitas[0] && e.visitas[0].fecha !== antes.visitas[0].fecha);
-    tarjeta(nuevaVisita);
-    if (e.premios_listos > antes.premios_listos) toast('Completaste tu tarjeta. Tu premio está listo.', 'ok');
-    else if (nuevaVisita) toast('Te sumaron la visita de hoy. Gracias por volver.', 'ok');
-    else if (e.premios_listos < antes.premios_listos) toast('Premio entregado. Disfrútalo.', 'ok');
-    else if (antes.cumple_regalo && !e.cumple_regalo) toast('Regalo de cumpleaños entregado.', 'ok');
-    else if (e.vip && e.vip.miembro && !(antes.vip && antes.vip.miembro)) toast('Ya eres parte del ' + e.vip.nombre + '.', 'ok');
+    const nueva = (e.visitas[0] && e.visitas[0].fecha) !== (antes.visitas[0] && antes.visitas[0].fecha);
+    pintar(nueva);
+    if (e.premios_listos > antes.premios_listos) celebrar('Completaste tu tarjeta. Tu premio está listo.');
+    else if (nueva) celebrar('Te sumaron la visita de hoy. Gracias por volver.');
+    else if (e.premios_listos < antes.premios_listos) celebrar('Premio entregado. Disfrútalo.');
+    else if (antes.cumple_regalo && !e.cumple_regalo) celebrar('Regalo de cumpleaños entregado.');
+    else if (e.vip && e.vip.miembro && !(antes.vip && antes.vip.miembro)) celebrar('Ya eres parte del ' + e.vip.nombre + '.');
   }, 4000);
 }
 
-function mostrarVipPago() {
-  const v = ESTADO.vip, capa = document.createElement('div'); capa.className = 'canje'; capa.id = 'capa';
-  capa.innerHTML = `<div class="hoja"><section class="vipcard" style="text-align:left;margin:0"><div class="lbl">Miembro</div><h3>${esc(v.nombre)}</h3>
-    <div class="vig">${esc(ESTADO.nombre)} · <span id="reloj"></span></div><ul>${(v.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul></section>
-    <p class="nota" style="margin-top:14px">Muestra esta pantalla en recepción al pagar para que apliquen tus beneficios.</p>
-    <button class="btn claro ancho" style="margin-top:14px" onclick="cerrarCanje()">Listo</button></div>`;
-  document.body.appendChild(capa);
-  const tick = () => { const r = $('#reloj'); if (!r) return clearInterval(t); r.textContent = new Date().toLocaleTimeString('es-PA', { hour: 'numeric', minute: '2-digit', second: '2-digit' }); };
-  const t = setInterval(tick, 1000); tick();
+/* ---------- Hojas ---------- */
+function hoja(html) {
+  cerrarHoja(true);
+  const v = document.createElement('div'); v.className = 'velo';
+  v.innerHTML = `<div class="hoja"><div class="asa"></div>${html}</div>`;
+  v.addEventListener('click', (ev) => { if (ev.target === v) cerrarHoja(); });
+  document.body.appendChild(v); requestAnimationFrame(() => v.classList.add('ver'));
+  return v;
 }
+function cerrarHoja(ya) { clearInterval(sondeo); const v = $('.velo'); if (!v) return; if (ya) return v.remove(); v.classList.remove('ver'); setTimeout(() => v.remove(), 280); }
+const btnCerrar = (t = 'Listo') => `<button class="btn claro ancho" style="margin-top:18px" onclick="cerrarHoja()">${t}</button>`;
 
-function vipHTML(E) {
-  const v = E.vip; if (!v) return '';
-  const ben = (v.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('');
-  if (v.miembro) return `<section class="vipcard"><div class="lbl">Miembro</div><h3>${esc(v.nombre)}</h3>
-    <div class="vig">${v.hasta ? 'Activa hasta el ' + fechaCorta(v.hasta) : 'Membresía activa'}</div><ul>${ben}</ul>
-    ${conBotones() ? `<button class="btn ancho" onclick="pedir('vip')">Mostrar en recepción</button>` : '<p class="vig" style="margin-top:12px">Recepción ve tus beneficios cuando das tu número al pagar.</p>'}</section>`;
-  const gratis = !(+v.cuota > 0);
-  return `<section class="bloque club"><h2>${esc(v.nombre)}</h2><p class="nota">${v.vencida ? 'Tu membresía venció. Renuévala en recepción y sigue con tus beneficios.' : 'Beneficios para los clientes de siempre.'}</p><ul>${ben}</ul>
-    ${gratis ? '<button class="btn ancho" style="margin-top:14px" onclick="unirse()">Unirme al club</button>' : `<div class="precio">${dinero(v.cuota)} <span>al ${esc(v.periodo || 'mes')}</span></div><p class="nota" style="margin-top:6px">Pídelo en recepción y lo activan en tu tarjeta.</p>`}</section>`;
+function hojaVisitas() {
+  const E = ESTADO;
+  hoja(`<h3>Tus visitas</h3><p class="nota">${E.visitas.length ? 'Las últimas veces que viniste.' : 'Aquí verás cada visita que sumes.'}</p>
+    <ul class="hist" style="margin-top:10px">${E.visitas.length ? E.visitas.map((v) => `<li><span>${fechaCorta(v.fecha)}</span><span>${v.sellos > 1 ? '+2 sellos' : '+1 sello'}</span></li>`).join('') : ''}</ul>${btnCerrar()}`);
+}
+function hojaClub() {
+  const V = ESTADO.vip, ben = `<ul class="lista-b" style="margin-top:10px">${(V.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
+  if (V.miembro) return hoja(`<h3>${esc(V.nombre)}</h3><p class="nota">${V.hasta ? 'Tu membresía está activa hasta el ' + fechaCorta(V.hasta) + '.' : 'Tu membresía está activa.'}</p>${ben}
+    <p class="nota" style="margin-top:12px">${recep() ? 'Al pagar, di tu número en recepción y aplican tus beneficios.' : 'Muestra tu tarjeta del club en recepción.'}</p>${btnCerrar()}`);
+  const gratis = !(+V.cuota > 0);
+  hoja(`<h3>${esc(V.nombre)}</h3><p class="nota">${V.vencida ? 'Tu membresía venció. Renuévala en recepción y sigue con tus beneficios.' : 'Beneficios para los clientes de siempre.'}</p>${ben}
+    ${gratis ? '<button class="btn ancho" style="margin-top:16px" onclick="unirse()">Unirme al club</button>' : `<div class="precio">${dinero(V.cuota)} <span>al ${esc(V.periodo || 'mes')}</span></div><p class="nota" style="margin-top:6px">Pídelo en recepción y lo activan en tu tarjeta al momento.</p>`}${btnCerrar('Cerrar')}`);
+}
+function hojaPremio(tipo) {
+  const E = ESTADO, t = tipo === 'cumple' ? 'Tu regalo de cumpleaños' : 'Tu premio';
+  const d = tipo === 'cumple' ? E.cumple_regalo + '. Es tuyo durante todo este mes.' : (E.premio || '') + '.';
+  if (!recep()) return pedir(tipo);
+  hoja(`<h3>${t}</h3><p class="nota">${esc(d)}</p><ul class="pasos" style="margin-top:12px"><li><i>1</i>Pídelo en recepción cuando vengas.</li><li><i>2</i>Di tu número de WhatsApp.</li><li><i>3</i>Te lo entregan y aquí se marca solo.</li></ul>${btnCerrar()}`);
+}
+function hojaGuardar() {
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  hoja(`<h3>Guarda tu tarjeta en el celular</h3><p class="nota">Así la abres con un toque, como una app.</p>
+    <ul class="pasos" style="margin-top:12px">${ios ? '<li><i>1</i><span>Toca el botón de compartir de Safari (el cuadrito con la flecha hacia arriba).</span></li><li><i>2</i><span>Toca <b>Agregar a pantalla de inicio</b>.</span></li><li><i>3</i><span>Toca <b>Agregar</b>.</span></li>'
+      : '<li><i>1</i><span>Toca los tres puntitos de arriba a la derecha.</span></li><li><i>2</i><span>Toca <b>Agregar a la pantalla principal</b>.</span></li><li><i>3</i><span>Confirma con <b>Agregar</b>.</span></li>'}</ul>
+    <p class="nota" style="margin-top:8px">Si no la guardas, no pasa nada: en recepción te encuentran con tu número.</p>${btnCerrar('Entendido')}`);
 }
 async function unirse() {
-  try { ESTADO = await rpc('vip_unirse', { p_key: store.get(CLAVE) }); tarjeta(); toast('Ya eres parte del club.', 'ok'); } catch (e) { toast(msg(e), 'mal'); }
+  try { ESTADO = await rpc('vip_unirse', { p_key: store.get(CLAVE) }); cerrarHoja(true); pintar(); celebrar('Ya eres parte del club.'); } catch (e) { toast(msg(e), 'mal'); }
 }
 
+/* Canje con código (negocios donde el cliente se atiende solo) */
 async function pedir(tipo) {
-  const key = store.get(CLAVE);
   try {
-    const r = await rpc('canje_pedir', { p_key: key, p_tipo: tipo });
-    mostrarCanje(r.codigo, tipo);
+    const r = await rpc('canje_pedir', { p_key: store.get(CLAVE), p_tipo: tipo });
+    const t = { cumple: 'Tu regalo de cumpleaños', vip: ESTADO.vip ? ESTADO.vip.nombre : 'Club', premio: 'Tu premio' }[tipo];
+    const v = hoja(`<div id="hc"><h3 style="text-align:center">${esc(t)}</h3><p class="nota" style="text-align:center">Muestra esta pantalla en recepción.</p>
+      <div class="qr">${qrSVG(r.codigo, 210)}</div><div class="codigo">${r.codigo}</div></div>${btnCerrar('Cerrar')}`);
+    if (tipo === 'vip') return;
+    const antes = { p: ESTADO.premios_listos, c: !!ESTADO.cumple_regalo };
+    sondeo = setInterval(async () => {
+      const e = await rpc('cliente_estado', { p_key: store.get(CLAVE) }).catch(() => null);
+      if (e && ((tipo === 'premio' && e.premios_listos < antes.p) || (tipo === 'cumple' && antes.c && !e.cumple_regalo))) {
+        clearInterval(sondeo); ESTADO = e;
+        $('#hc', v).innerHTML = `<div class="hecho"><div class="circ">${I.check.replace('<svg', '<svg width="36" height="36"')}</div><h3>Listo, disfrútalo</h3><p class="nota">Recepción ya lo marcó como usado.</p></div>`;
+      }
+    }, 3000);
   } catch (e) { toast(msg(e), 'mal'); }
 }
 
-function mostrarCanje(codigo, tipo) {
-  const capa = document.createElement('div'); capa.className = 'canje'; capa.id = 'capa';
-  capa.innerHTML = `<div class="hoja"><h3>${{ cumple: 'Tu regalo de cumpleaños', vip: ESTADO.vip ? ESTADO.vip.nombre : 'Club', premio: 'Tu premio' }[tipo]}</h3>
-    <p class="nota">Muestra esta pantalla en recepción.</p>
-    <div class="qr">${qrSVG(codigo, 220)}</div><div class="codigo">${codigo}</div>
-    <p class="nota">Si no lo pueden escanear, díctales el código.</p>
-    <button class="btn claro ancho" style="margin-top:18px" onclick="cerrarCanje()">Cerrar</button></div>`;
-  capa.addEventListener('click', (ev) => { if (ev.target === capa) cerrarCanje(); });
-  document.body.appendChild(capa);
-  if (tipo === 'vip') return;
-  const antes = { p: ESTADO.premios_listos, c: !!ESTADO.cumple_regalo };
-  clearInterval(sondeo);
-  sondeo = setInterval(async () => {
-    const e = await rpc('cliente_estado', { p_key: store.get(CLAVE) }).catch(() => null);
-    if (!e) return;
-    if ((tipo === 'premio' && e.premios_listos < antes.p) || (tipo === 'cumple' && antes.c && !e.cumple_regalo)) {
-      clearInterval(sondeo); ESTADO = e;
-      $('.hoja', capa).innerHTML = `<div class="hecho"><div class="circ">${CHECK.replace('<svg', '<svg width="38" height="38"')}</div><h3>¡Listo, disfrútalo!</h3><p class="nota">Recepción ya lo marcó como usado.</p></div><button class="btn ancho" onclick="cerrarCanje()">Volver a mi tarjeta</button>`;
-    }
-  }, 3000);
-}
-function cerrarCanje() { clearInterval(sondeo); const c = $('#capa'); if (c) c.remove(); tarjeta(); }
-
+/* ---------- Registro y recuperación ---------- */
 function registro() {
+  $('#btnGuardar').classList.add('oculto');
   const dias = Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
   const meses = MESES.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
-  $('#vista').innerHTML = `<section class="formu">
+  $('#vista').innerHTML = `<div style="height:22px"></div><section class="formu">
     <h2>Tu tarjeta de cliente frecuente</h2>
-    <p>Se crea una sola vez. En cada visita sumas un sello y al completar ${NEG.config.meta || 6} recibes: ${esc(NEG.config.premio || 'un premio')}.</p>
+    <p>Se crea una sola vez. Cada visita suma un sello y al completar ${NEG.config.meta || 6} recibes: ${esc(NEG.config.premio || 'un premio')}.</p>
     ${tokenQR ? '<div class="aviso-sello">Al crear tu tarjeta se suma el sello de hoy.</div>' : ''}
     <form id="f" novalidate>
       <div class="campo"><label for="nom">Tu nombre</label><input id="nom" autocomplete="name" required></div>
       <div class="campo"><label for="tel">Tu WhatsApp</label><input id="tel" inputmode="tel" autocomplete="tel" placeholder="6000-0000" required></div>
       <div class="campo"><label>Tu cumpleaños (opcional)</label><div class="fila"><select id="dia"><option value="">Día</option>${dias}</select><select id="mes"><option value="">Mes</option>${meses}</select></div></div>
-      <div class="campo"><label for="pin">Crea un código de 4 números</label><input id="pin" class="pin" inputmode="numeric" maxlength="4" autocomplete="off" required><p class="nota" style="margin-top:6px">Te sirve para recuperar tu tarjeta si cambias de celular.</p></div>
+      <div class="campo"><label for="pin">Crea un código de 4 números</label><input id="pin" class="pin" inputmode="numeric" maxlength="4" autocomplete="off" required><p class="nota" style="margin-top:6px">Te sirve para entrar a tu tarjeta desde otro celular.</p></div>
       <label class="check"><input type="checkbox" id="ok"> Acepto que ${esc(NEG.nombre)} guarde mi nombre, WhatsApp y cumpleaños para esta tarjeta y para escribirme sobre mis visitas.</label>
       <p class="error" id="err"></p>
       <button class="btn ancho" id="go">Crear mi tarjeta</button>
     </form>
-    <p style="text-align:center;margin-top:16px"><button class="enlace" onclick="recuperar()">Ya tengo tarjeta</button></p></section>`;
+    <p style="text-align:center;margin-top:14px"><button class="enlace" onclick="recuperar()">Ya tengo tarjeta</button></p></section>`;
   $('#f').onsubmit = async (ev) => {
     ev.preventDefault();
     if (!$('#ok').checked) { $('#err').textContent = 'Necesitamos tu permiso para crear la tarjeta.'; return; }
@@ -279,28 +362,28 @@ function registro() {
     try {
       const d = $('#dia').value, m = $('#mes').value;
       const r = await rpc('cliente_registrar', { p_slug: slug, p_nombre: $('#nom').value, p_tel: $('#tel').value, p_pin: $('#pin').value, p_dia: d && m ? +d : null, p_mes: d && m ? +m : null });
-      store.set(CLAVE, r.device_key); ESTADO = r.estado;
+      store.set(CLAVE, r.device_key); ESTADO = await rpc('cliente_estado', { p_key: r.device_key });
       if (tokenQR) return sumar(r.device_key);
-      tarjeta(); toast('Tu tarjeta está lista.', 'ok');
+      pintar(); celebrar('Tu tarjeta está lista.');
     } catch (e) { $('#err').textContent = msg(e); $('#go').disabled = false; }
   };
 }
 
 function recuperar() {
-  $('#vista').innerHTML = `<section class="formu"><h2>Entra a tu tarjeta</h2><p>Con el WhatsApp y el código de 4 números que usaste al crearla.</p>
+  $('#vista').innerHTML = `<div style="height:22px"></div><section class="formu"><h2>Entra a tu tarjeta</h2><p>Con el WhatsApp y el código de 4 números que usaste al crearla.</p>
     <form id="f" novalidate>
       <div class="campo"><label for="tel">Tu WhatsApp</label><input id="tel" inputmode="tel" autocomplete="tel" required></div>
       <div class="campo"><label for="pin">Tu código</label><input id="pin" class="pin" inputmode="numeric" maxlength="4" autocomplete="off" required></div>
       <p class="error" id="err"></p><button class="btn ancho" id="go">Entrar</button></form>
-    <p class="nota" style="text-align:center;margin-top:16px">¿Olvidaste tu código? Pídele a recepción que te ayude.</p>
+    <p class="nota" style="text-align:center;margin-top:14px">¿Olvidaste tu código? Pídele a recepción que te ayude.</p>
     <p style="text-align:center"><button class="enlace" onclick="registro()">Crear una tarjeta nueva</button></p></section>`;
   $('#f').onsubmit = async (ev) => {
     ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
     try {
       const r = await rpc('cliente_recuperar', { p_slug: slug, p_tel: $('#tel').value, p_pin: $('#pin').value });
-      store.set(CLAVE, r.device_key); ESTADO = r.estado;
+      store.set(CLAVE, r.device_key); ESTADO = await rpc('cliente_estado', { p_key: r.device_key });
       if (tokenQR) return sumar(r.device_key);
-      tarjeta(); toast('Qué bueno verte de nuevo.', 'ok');
+      pintar(); celebrar('Qué bueno verte de nuevo.');
     } catch (e) { $('#err').textContent = msg(e); $('#go').disabled = false; }
   };
 }
