@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261107212634">
+<meta name="kata-version" content="20261107213330">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#123A5E">
 <title>Mi tarjeta</title>
@@ -122,6 +122,10 @@
   .promo-scroll::-webkit-scrollbar { display: none; }
   .promo { flex: 0 0 78%; scroll-snap-align: start; background: #fff; border-radius: 18px; padding: 16px 16px 14px; box-shadow: var(--sombra); border-top: 3px solid #D6B680; }
   .promo-scroll.una .promo { flex-basis: 100%; }
+  .promo { border-left: 0; border-right: 0; border-bottom: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; transition: transform .15s; }
+  .promo:active { transform: scale(.97); }
+  .promo small span { float: right; display: inline-flex; align-items: center; gap: 2px; color: var(--marca-2); }
+  .promo small span svg { width: 14px; height: 14px; }
   .promo b { font-family: "Gloock", serif; font-weight: 400; font-size: 19px; display: block; line-height: 1.15; }
   .promo p { font-size: 14px; color: var(--tinta-2); margin-top: 6px; line-height: 1.4; }
   .promo small { display: block; margin-top: 10px; font-size: 12px; color: #A27E3E; font-weight: 600; }
@@ -261,7 +265,7 @@ function pintar(animar = false) {
   const frase = E.premios_listos > 0 ? `<b>Visita sumada.</b> Completaste tu tarjeta y ${esc((E.premio || 'tu premio').toLowerCase())} te espera.`
     : `<b>Visita sumada.</b> Te ${faltan === 1 ? 'falta 1 visita' : `faltan ${faltan} visitas`} para tu ${esc((E.premio || 'premio').toLowerCase())}.`;
   const PR = promosVigentes();
-  const promos = vipActivo && PR.length ? `<div class="promos"><h4>Promociones del club</h4><div class="promo-scroll${PR.length === 1 ? ' una' : ''}">${PR.map((x) => `<div class="promo"><b>${esc(x.titulo)}</b><p>${esc(x.detalle || '')}</p>${x.hasta ? `<small>Hasta el ${fechaCorta(x.hasta)}</small>` : '<small>Todo el mes</small>'}</div>`).join('')}</div></div>` : '';
+  const promos = vipActivo && PR.length ? `<div class="promos"><h4>Promociones del club</h4><div class="promo-scroll${PR.length === 1 ? ' una' : ''}">${PR.map((x, i) => `<button class="promo" onclick="hojaPromo(${i})"><b>${esc(x.titulo)}</b><p>${esc(x.detalle || '')}</p><small>${x.hasta ? 'Hasta el ' + fechaCorta(x.hasta) : 'Todo el mes'}<span>Agendar ${I.fl}</span></small></button>`).join('')}</div></div>` : '';
 
   const wa = (() => { const t = String(NEG.config.whatsapp || '').replace(/\D/g, ''); return t.length === 8 ? '507' + t : t; })();
   $('#vista').innerHTML = `
@@ -346,6 +350,17 @@ function hoja(html) {
 function cerrarHoja(ya) { clearInterval(sondeo); const v = $('.velo'); if (!v) return; if (ya) return v.remove(); v.classList.remove('ver'); setTimeout(() => v.remove(), 280); }
 const btnCerrar = (t = 'Listo') => `<button class="btn claro ancho" style="margin-top:18px" onclick="cerrarHoja()">${t}</button>`;
 
+function waNegocio() { const t = String(NEG.config.whatsapp || '').replace(/\D/g, ''); return t.length === 8 ? '507' + t : t; }
+function hojaPromo(i) {
+  const x = promosVigentes()[i], wa = waNegocio(); if (!x) return;
+  const txt = `Hola, soy ${ESTADO.nombre}, miembro del ${ESTADO.vip.nombre}. Quisiera agendar la promoción «${x.titulo}». ¿Qué días tienen disponibles?`;
+  hoja(`<p class="nota" style="color:#A27E3E;font-weight:600">Promoción del club</p><h3 style="font-family:'Gloock',serif;font-weight:400;font-size:26px">${esc(x.titulo)}</h3>
+    ${x.detalle ? `<p class="nota" style="font-size:15px;margin-top:4px">${esc(x.detalle)}</p>` : ''}
+    <p class="nota" style="margin-top:10px">${x.hasta ? 'Válida hasta el ' + fechaCorta(x.hasta) + '.' : 'Válida todo el mes.'}</p>
+    <p style="margin-top:18px;font-weight:600">¿Deseas agendarla?</p>
+    ${wa ? `<a class="agendar" style="margin-top:10px" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(txt)}" onclick="setTimeout(cerrarHoja, 400)"><span class="ic">${I.wa}</span><span><b>Agendar por WhatsApp</b><span>El mensaje ya va escrito</span></span><span class="fl">${I.fl}</span></a>` : ''}
+    ${btnCerrar('Ahora no')}`);
+}
 function hojaClub() {
   const V = ESTADO.vip, ben = `<ul class="lista-b" style="margin-top:10px">${(V.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
   if (V.miembro) return hoja(`<h3>${esc(V.nombre)}</h3><p class="nota">${V.hasta ? 'Tu membresía está activa hasta el ' + fechaCorta(V.hasta) + '.' : 'Tu membresía está activa.'}</p>${ben}
