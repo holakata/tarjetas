@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261107221818">
+<meta name="kata-version" content="20261107223952">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Panel de recepción</title>
@@ -80,6 +80,9 @@
   .wa.redondo { width: 42px; min-height: 42px; padding: 0; border-radius: 50%; flex: none; } .wa.redondo svg { width: 22px; height: 22px; }
   .wa { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border-radius: 12px; background: #1F8F55; color: #fff; font-weight: 600; font-size: 14px; text-decoration: none; white-space: nowrap; }
   .seccion { margin-bottom: 18px; }
+  .lista li.separador { display: block; padding: 18px 0 8px; font-size: 13px; font-weight: 700; color: #9A5B00; border-top: 2px solid #F3DDBA; }
+  .lejos-chip { display: inline-block !important; margin-top: 4px; background: #FDF0DC; color: #9A5B00 !important; font-size: 12px !important; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+  .res-solo { max-width: 620px; margin: 0 auto; }
   .seccion h3 { font-size: 16px; margin-bottom: 4px; }
   .vacio { color: var(--tinta-2); font-size: 14px; padding: 8px 0; }
 
@@ -217,13 +220,15 @@ document.addEventListener('fullscreenchange', () => { if (!document.fullscreenEl
 /* ---------- Canjear ---------- */
 function canjear() {
   $('#cont').innerHTML = `<h2 class="tit">${MODO() === 'cliente' ? 'Canjear' : 'Escanear cliente'}</h2><p class="sub">${MODO() === 'cliente' ? 'Premios, regalos de cumpleaños y tarjetas de regalo se canjean igual: escanea el QR del cliente o escribe su código.' : 'Al cobrar, busca al cliente por su WhatsApp (o escanea el código de su tarjeta). En su ficha le sumas la visita, aplicas su beneficio VIP y le entregas su premio. Las tarjetas de regalo también se escanean aquí.'}</p>
-    <div class="grid2"><div class="tarjeta"><div id="lector"></div><p class="nota" id="camnota" style="margin-top:10px">El navegador te va a pedir permiso para usar la cámara.</p>
+    <div class="grid2" id="buscador"><div class="tarjeta"><div id="lector"></div><p class="nota" id="camnota" style="margin-top:10px">El navegador te va a pedir permiso para usar la cámara.</p>
       <button class="btn claro ancho" id="camBtn" style="margin-top:10px" onclick="iniciarLector()">Abrir cámara</button></div>
     <div>${MODO() !== 'cliente' ? `<div class="tarjeta" style="margin-bottom:16px"><label for="bq">Buscar por WhatsApp o nombre</label><input id="bq" inputmode="search" autocomplete="off" placeholder="Ej. 6123 o Carla">
       <ul class="lista" id="bres"></ul></div>` : ''}
       <div class="tarjeta"><label for="cod">${MODO() !== 'cliente' ? 'O escribe el código de su tarjeta' : 'Código del cliente'}</label><input id="cod" class="codigo-in" maxlength="6" autocomplete="off" placeholder="······">
-      <button class="btn ancho" style="margin-top:12px" onclick="buscar($('#cod').value)">Buscar</button></div>
-      <div id="res" style="margin-top:16px"></div></div></div>`;
+      <button class="btn ancho" style="margin-top:12px" onclick="buscar($('#cod').value)">Buscar</button></div></div></div>
+    <div id="res" class="res-solo"></div>`;
+  // Cuando aparece un cliente (o una tarjeta de regalo) se oculta todo lo de buscar; «Siguiente cliente» lo vuelve a mostrar.
+  new MutationObserver(() => { const hay = $('#res') && $('#res').innerHTML.trim() !== ''; const b = $('#buscador'); if (!b) return; b.classList.toggle('oculto', hay); if (hay) { detenerLector(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }).observe($('#res'), { childList: true });
   $('#cod').addEventListener('keydown', (e) => { if (e.key === 'Enter') buscar(e.target.value); });
   const bq = $('#bq'); if (!bq) return;
   let t = null;
@@ -237,7 +242,7 @@ function canjear() {
   }, 250); };
 }
 async function abrirFicha(tel) {
-  try { const f = await rpc('ficha_abrir', { p_tel: tel }); if ($('#bq')) { $('#bq').value = ''; $('#bres').innerHTML = ''; } ficha(f); $('#res').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  try { const f = await rpc('ficha_abrir', { p_tel: tel }); if ($('#bq')) { $('#bq').value = ''; $('#bres').innerHTML = ''; } ficha(f); }
   catch (e) { toast(msg(e), 'mal'); }
 }
 async function iniciarLector() {
@@ -249,6 +254,10 @@ async function iniciarLector() {
 }
 async function detenerLector() { if (lector) { try { await lector.stop(); lector.clear(); } catch (e) {} lector = null; } const b = $('#camBtn'); if (b) b.classList.remove('oculto'); }
 
+function nuevoCliente() {
+  $('#res').innerHTML = ''; if ($('#cod')) $('#cod').value = '';
+  if (MODO() === 'recepcion') { const b = $('#bq'); if (b) b.focus(); } else iniciarLector();
+}
 function ficha(f) {
   const meta = f.meta, V = f.vip, llenos = f.premios_listos > 0 && f.sellos === 0 ? meta : f.sellos;
   const fila = (titulo, detalle, boton, hecho) => `<div class="accion"><div><b>${titulo}</b><span>${detalle}</span></div>${hecho ? `<span class="hecho-chip">${hecho}</span>` : boton}</div>`;
@@ -261,7 +270,7 @@ function ficha(f) {
     <div class="puntos" style="margin-bottom:14px">${Array.from({ length: meta }, (_, i) => `<i class="${i < llenos ? 'on' : ''}"></i>`).join('')}</div>
     ${acc}${V && !V.miembro ? `<p class="nota" style="margin-top:12px">${V.vencida ? 'Su membresía del ' + esc(V.nombre) + ' venció.' : 'No es miembro del ' + esc(V.nombre) + '.'} <button class="enlace" onclick="ir('vip').then(()=>{$('#vt').value='${f.tel}'})">${V.vencida ? 'Renovar' : 'Activar'}</button></p>` : ''}
     <div class="acciones" style="margin-top:16px"><a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(f.tel)}?text=${encodeURIComponent(`Hola ${f.nombre.split(' ')[0]}, aquí tienes tu tarjeta de ${NEG.nombre}: ${BASE}t/?n=${NEG.slug} . Guárdala para ver tus sellos y beneficios.`)}">Enviarle su tarjeta por WhatsApp</a>
-    <button class="btn claro" style="min-height:40px;flex:1" onclick="$('#res').innerHTML='';$('#cod').value='';${MODO() === 'recepcion' ? "$('#bq')&&$('#bq').focus()" : 'iniciarLector()'}">Siguiente cliente</button></div></div>`;
+    <button class="btn claro" style="min-height:40px;flex:1" onclick="nuevoCliente()">Siguiente cliente</button></div></div>`;
 }
 async function accion(cod, a) {
   $$('.accion .btn').forEach((b) => (b.disabled = true));
@@ -291,14 +300,14 @@ async function buscar(cod) {
     } else { titulo = k.cliente; det = k.detalle + ' · ' + telBonito(k.tel); }
     const et = { premio: 'Premio de sellos', cumple: 'Regalo de cumpleaños', regalo: 'Tarjeta de regalo', vip: (NEG.config.vip && NEG.config.vip.nombre) || 'Club VIP' }[k.tipo];
     $('#res').innerHTML = `<div class="tarjeta resultado"><span class="tipo">${et}</span><h3>${esc(titulo)}</h3><p class="det">${esc(det)}</p>${extra}
-      <button class="btn ancho" id="conf">${k.tipo === 'vip' ? 'Aplicar beneficio' : 'Confirmar entrega'}</button><button class="enlace" style="width:100%;margin-top:6px" onclick="$('#res').innerHTML='';$('#cod').value=''">Cancelar</button></div>`;
+      <button class="btn ancho" id="conf">${k.tipo === 'vip' ? 'Aplicar beneficio' : 'Confirmar entrega'}</button><button class="enlace" style="width:100%;margin-top:6px" onclick="nuevoCliente()">Cancelar</button></div>`;
     $('#conf').onclick = async () => {
       $('#conf').disabled = true;
       try {
         const monto = $('#mto') ? parseFloat(($('#mto').value || '').replace(',', '.')) : null;
         await rpc('canje_confirmar', { p_codigo: cod, p_monto: monto });
         $('#res').innerHTML = `<div class="tarjeta exito"><div class="circ">${CHECK}</div><h3>Listo</h3><p class="nota">Quedó registrado. El cliente lo ve en su celular.</p>
-          <button class="btn ancho" style="margin-top:16px" onclick="$('#res').innerHTML='';$('#cod').value='';iniciarLector()">Canjear otro</button></div>`;
+          <button class="btn ancho" style="margin-top:16px" onclick="nuevoCliente()">Siguiente cliente</button></div>`;
         $('#cod').value = '';
       } catch (e) { toast(msg(e), 'mal'); $('#conf').disabled = false; }
     };
@@ -313,7 +322,7 @@ async function clientes() {
   const cumple = DATOS.lista.filter((c) => c.cumple_mes === mes);
   const lejos = DATOS.lista.filter((c) => c.dias_sin_venir !== null && c.dias_sin_venir >= 30);
   const fila = (c, accion = '') => `<li style="cursor:pointer" onclick="if(!event.target.closest('a')){ir('canjear').then(()=>abrirFicha('${c.tel}'))}"><div class="av">${esc(c.nombre.trim()[0])}</div><div class="info"><b>${esc(c.nombre)}</b>
-      <span>${telBonito(c.tel)} · ${c.ultima ? 'última visita ' + fechaCorta(c.ultima) : 'sin visitas'}</span></div>
+      <span>${telBonito(c.tel)} · ${c.ultima ? 'última visita ' + fechaCorta(c.ultima) : 'sin visitas'}</span>${c.dias_sin_venir !== null && c.dias_sin_venir >= 30 ? `<span class="lejos-chip">Hace ${c.dias_sin_venir} días</span>` : ''}</div>
       ${c.vip ? '<span class="chip" style="background:#23262B;color:#D6B680">VIP</span>' : ''}${c.premios_listos > 0 ? '<span class="chip">Premio listo</span>' : accion ? '' : `<div class="puntos">${Array.from({ length: meta }, (_, i) => `<i class="${i < c.sellos ? 'on' : ''}"></i>`).join('')}</div>`}${accion}</li>`;
   const waTxt = (c, tipo) => {
     const n = c.nombre.split(' ')[0], link = `${BASE}t/?n=${NEG.slug}`;
@@ -340,7 +349,11 @@ async function clientes() {
     $$('#gru button').forEach((b) => (b.onclick = () => { grupo = b.dataset.g; pintar(); }));
     $('#gnota').textContent = g.nota || ''; $('#gnota').classList.toggle('oculto', !g.nota);
     const f = g.l.filter((c) => !q || c.nombre.toLowerCase().includes(q) || c.tel.includes(q.replace(/\D/g, '') || '§'));
-    $('#todos').innerHTML = f.length ? f.map((c) => fila(c, g.wa ? waTxt(c, g.wa) : '')).join('') : `<li class="vacio">${q ? 'No hay resultados.' : g.vacio}</li>`;
+    const lejano = (c) => c.dias_sin_venir !== null && c.dias_sin_venir >= 30;
+    if (grupo === 'todos' && f.some(lejano) && f.some((c) => !lejano(c))) {
+      $('#todos').innerHTML = f.filter((c) => !lejano(c)).map((c) => fila(c)).join('')
+        + `<li class="separador">Hace más de 30 días que no vienen</li>` + f.filter(lejano).map((c) => fila(c, waTxt(c, 'lejos'))).join('');
+    } else $('#todos').innerHTML = f.length ? f.map((c) => fila(c, g.wa ? waTxt(c, g.wa) : '')).join('') : `<li class="vacio">${q ? 'No hay resultados.' : g.vacio}</li>`;
   };
   pintar(); $('#bus').oninput = pintar;
 }
