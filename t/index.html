@@ -4,8 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#123A5E">
-<meta name="apple-mobile-web-app-capable" content="yes">
 <title>Mi tarjeta</title>
+<script>
+  (function () {
+    var n = (new URLSearchParams(location.search).get('n') || 'jazmin').replace(/[^a-z0-9-]/g, '');
+    var h = document.head;
+    function l(rel, href) { var e = document.createElement('link'); e.rel = rel; e.href = href; h.appendChild(e); }
+    l('apple-touch-icon', '../iconos/' + n + '-180.png');
+    l('icon', '../iconos/' + n + '-192.png');
+    l('manifest', '../iconos/' + n + '.webmanifest');
+  })();
+</script>
+<meta name="apple-mobile-web-app-title" content="Mi tarjeta">
 <link rel="stylesheet" href="../comun.css">
 <style>
   body { background: var(--fondo); overflow-x: hidden; }
@@ -28,10 +38,12 @@
   .giro:active { scale: .985; }
   .pase.vuelta .giro { transform: rotateY(180deg); }
   .cara { position: absolute; inset: 0; border-radius: 24px; backface-visibility: hidden; -webkit-backface-visibility: hidden; overflow: hidden; box-shadow: 0 2px 4px rgba(10,20,40,.10), 0 22px 40px rgba(10,20,40,.22); }
-  .cara.atras { transform: rotateY(180deg); background: #fff; color: var(--tinta); display: flex; align-items: center; gap: 16px; padding: 18px; }
-  .atras .qr { width: 146px; flex: none; } .atras .qr svg { width: 100%; height: auto; display: block; }
+  .cara.atras { transform: rotateY(180deg); background: #fff; color: var(--tinta); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 16px; }
+  .atras .qr { width: 168px; flex: none; }
+  .giro.fija { cursor: default; } .giro.fija:active { scale: 1; }
+  .voltear svg { width: 16px !important; height: 16px !important; } .voltear:has(svg:only-child) { padding: 8px; } .atras .qr svg { width: 100%; height: auto; display: block; }
   .atras h3 { font-size: 16px; margin-bottom: 6px; } .atras p { font-size: 13px; color: var(--tinta-2); line-height: 1.4; }
-  .atras .cod { font-family: ui-monospace, Menlo, monospace; font-size: 19px; letter-spacing: .14em; font-weight: 700; margin-top: 4px; color: var(--tinta); }
+  .atras .cod { font-family: ui-monospace, Menlo, monospace; font-size: 15px; letter-spacing: .2em; font-weight: 600; color: var(--tinta-2); }
   .atras .num { display: block; margin: 2px 0 8px; font-weight: 700; font-size: 17px; color: var(--tinta); }
   .atras .mini { font-size: 11px; color: #9AA1AA; margin-top: 10px; display: flex; align-items: center; gap: 5px; }
   .atras .mini svg { width: 12px; height: 12px; }
@@ -117,16 +129,19 @@
   .formu > p { color: var(--tinta-2); margin-bottom: 18px; font-size: 15px; }
   .aviso-sello { background: var(--fondo-marca); border-radius: 14px; padding: 12px 14px; font-size: 14px; margin-bottom: 16px; color: var(--marca-2); font-weight: 600; }
   .pin { letter-spacing: .5em; text-align: center; font-size: 22px; font-weight: 700; }
+  .bienv { padding-top: 22px; }
+  .bienv h2 { font-family: "Gloock", serif; font-weight: 400; font-size: 28px; line-height: 1.1; margin-bottom: 8px; }
+  .bienv p { color: var(--tinta-2); font-size: 16px; margin-bottom: 22px; } .bienv p b { color: var(--tinta); }
+  .kata a { color: inherit; text-decoration: none; border-bottom: 1px solid #D5D9DE; }
   .kata { text-align: center; font-size: 12px; color: #9AA1AA; margin-top: 30px; }
 </style>
 </head>
 <body>
 <div class="cielo"></div>
 <div class="app">
-  <header class="cab oculto" id="cab"><div class="mono" id="mono"></div><div><h1 id="neg"></h1><p id="sub"></p></div>
-    <button class="ico oculto" id="btnGuardar" aria-label="Guardar en el celular" onclick="hojaGuardar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M12 8v6M9 11.5l3 3 3-3"/></svg></button></header>
+  <header class="cab oculto" id="cab"><div class="mono" id="mono"></div><div><h1 id="neg"></h1><p id="sub"></p></div></header>
   <main id="vista"><p class="cargando" style="color:#fff">Abriendo tu tarjeta…</p></main>
-  <p class="kata">Tarjeta hecha por Kata Studio</p>
+  <p class="kata">Tarjeta hecha por Kata Studio · <a href="https://www.instagram.com/holakata.pa/" target="_blank" rel="noopener">@holakata.pa</a></p>
 </div>
 
 <script src="../vendor/supabase.js"></script>
@@ -166,11 +181,11 @@ async function iniciar() {
     const key = store.get(CLAVE);
     if (key) {
       ESTADO = await rpc('cliente_estado', { p_key: key });
-      if (!ESTADO) { store.del(CLAVE); return registro(); }
+      if (!ESTADO) { store.del(CLAVE); return bienvenida(); }
       if (tokenQR) return sumar(key);
       return pintar();
     }
-    registro();
+    bienvenida();
   } catch (e) { $('#vista').innerHTML = `<p class="cargando" style="color:#fff">${esc(msg(e))}</p>`; }
 }
 
@@ -197,20 +212,18 @@ function pintar(animar = false) {
     else if (i === meta) celdas += `<div class="s meta">${I.regalo}</div>`;
     else celdas += `<div class="s"></div>`;
   }
-  const atras = (titulo) => `<div class="cara atras"><div class="qr" data-qr></div><div>
-    <h3>${titulo}</h3><p>Al pagar, di tu número</p><span class="num">${esc(telBonito(E.tel || ''))}</span>
-    <p>o muestra este código</p><div class="cod" data-cod>······</div>
-    <div class="mini">${I.giro} Toca para voltear</div></div></div>`;
-  const pSellos = `<div class="pase" id="p0"><div class="giro" onclick="voltear(this)">
+  const vipActivo = !!(V && V.miembro), giraSellos = recep() && !vipActivo, giraVip = vipActivo;
+  const atras = `<div class="cara atras"><div class="qr" data-qr></div><div class="cod" data-cod>······</div></div>`;
+  const pSellos = `<div class="pase" id="p0"><div class="giro${giraSellos ? '' : ' fija'}" onclick="voltear(this)">
       <div class="cara sellos-f"><div class="f-top"><div><small>Tarjeta de cliente</small><b>${esc(E.nombre)}</b></div><div class="cuenta">${llenos}<span> / ${meta}</span></div></div>
         <div class="grid${meta > 6 ? (meta > 8 ? ' m10' : ' m8') : ''}">${celdas}</div>
-        <div class="f-pie"><span>${esc(E.premio || '')}</span>${recep() ? `<span class="voltear">${I.qr} Mi código</span>` : ''}</div></div>
-      ${recep() ? atras('Tu código') : ''}</div></div>`;
+        <div class="f-pie"><span>${esc(E.premio || '')}</span>${giraSellos ? `<span class="voltear">${I.qr}</span>` : ''}</div></div>
+      ${giraSellos ? atras : ''}</div></div>`;
   const pVip = V && V.miembro ? `<div class="pase" id="p1"><div class="giro" onclick="voltear(this)">
       <div class="cara vip-f"><small>Miembro</small><h3>${esc(V.nombre)}</h3><div class="vig">${V.hasta ? 'Activa hasta el ' + fechaCorta(V.hasta) : 'Membresía activa'}</div>
         <div class="ben">${(V.beneficios || []).slice(0, 3).map((b) => `<span>${esc(b)}</span>`).join('')}</div>
-        <div class="f-pie" style="justify-content:flex-end"><span class="voltear">${I.qr} ${recep() ? 'Mi código' : 'Mostrar'}</span></div></div>
-      ${recep() ? atras(esc(V.nombre)) : ''}</div></div>` : '';
+        <div class="f-pie" style="justify-content:flex-end"><span class="voltear">${I.qr}</span></div></div>
+      ${recep() ? atras : ''}</div></div>` : '';
 
   const avisos = [];
   if (E.premios_listos > 0) avisos.push(`<button class="aviso brilla" onclick="hojaPremio('premio')"><span class="ic">${I.regalo}</span><span><b>Tu premio está listo</b><span>${esc(E.premio || '')}</span></span><span class="fl">${I.fl}</span></button>`);
@@ -220,7 +233,6 @@ function pintar(animar = false) {
   const frase = E.premios_listos > 0 ? `Completaste tu tarjeta. <b>${esc(E.premio || 'Tu premio')}</b> te espera.`
     : `${E.hoy_sellado ? 'Visita de hoy sumada. ' : ''}Te ${faltan === 1 ? 'falta <b>1 visita</b>' : `faltan <b>${faltan} visitas</b>`} para tu ${esc((E.premio || 'premio').toLowerCase())}.`;
 
-  $('#btnGuardar').classList.remove('oculto');
   $('#vista').innerHTML = `
     <p class="hola">Hola, <b>${esc(E.nombre.split(' ')[0])}</b></p>
     <div class="wallet${pVip ? '' : ' uno'}" id="wallet">${pSellos}${pVip}</div>
@@ -242,6 +254,7 @@ function pintar(animar = false) {
 }
 
 function voltear(el) {
+  if (el.classList.contains('fija')) return;
   if (!recep()) { if (el.closest('#p1')) pedir('vip'); return; }
   el.parentElement.classList.toggle('vuelta');
   try { navigator.vibrate && navigator.vibrate(10); } catch (e) {}
@@ -336,14 +349,30 @@ async function pedir(tipo) {
   } catch (e) { toast(msg(e), 'mal'); }
 }
 
-/* ---------- Registro y recuperación ---------- */
+/* ---------- Bienvenida, registro y recuperación ---------- */
+function bienvenida() {
+  const c = NEG.config, meta = c.meta || 6;
+  let celdas = '';
+  for (let i = 1; i <= meta; i++) celdas += i === meta ? `<div class="s meta">${I.regalo}</div>` : `<div class="s${i <= 2 ? ' on' : ''}">${i <= 2 ? I.check : ''}</div>`;
+  $('#vista').innerHTML = `<div style="height:26px"></div>
+    <div class="wallet uno" style="pointer-events:none"><div class="pase"><div class="giro"><div class="cara sellos-f">
+      <div class="f-top"><div><small>Tarjeta de cliente</small><b>Tu nombre</b></div><div class="cuenta">2<span> / ${meta}</span></div></div>
+      <div class="grid${meta > 6 ? (meta > 8 ? ' m10' : ' m8') : ''}">${celdas}</div>
+      <div class="f-pie"><span>${esc(c.premio || '')}</span></div></div></div></div></div>
+    <div class="cuerpo bienv">
+      <h2>Tu tarjeta de cliente frecuente</h2>
+      <p>Cada visita suma un sello. Al completar ${meta} recibes: <b>${esc(c.premio || 'un premio')}</b>.</p>
+      <button class="btn ancho" onclick="registro()">Crear mi tarjeta</button>
+      <button class="btn claro ancho" style="margin-top:10px" onclick="recuperar()">Ya tengo tarjeta</button>
+    </div>`;
+}
+
 function registro() {
-  $('#btnGuardar').classList.add('oculto');
   const dias = Array.from({ length: 31 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
   const meses = MESES.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
   $('#vista').innerHTML = `<div style="height:22px"></div><section class="formu">
-    <h2>Tu tarjeta de cliente frecuente</h2>
-    <p>Se crea una sola vez. Cada visita suma un sello y al completar ${NEG.config.meta || 6} recibes: ${esc(NEG.config.premio || 'un premio')}.</p>
+    <h2>Crea tu tarjeta</h2>
+    <p>Solo se hace una vez.</p>
     ${tokenQR ? '<div class="aviso-sello">Al crear tu tarjeta se suma el sello de hoy.</div>' : ''}
     <form id="f" novalidate>
       <div class="campo"><label for="nom">Tu nombre</label><input id="nom" autocomplete="name" required></div>
@@ -354,7 +383,7 @@ function registro() {
       <p class="error" id="err"></p>
       <button class="btn ancho" id="go">Crear mi tarjeta</button>
     </form>
-    <p style="text-align:center;margin-top:14px"><button class="enlace" onclick="recuperar()">Ya tengo tarjeta</button></p></section>`;
+    <p style="text-align:center;margin-top:14px"><button class="enlace" onclick="bienvenida()">Volver</button></p></section>`;
   $('#f').onsubmit = async (ev) => {
     ev.preventDefault();
     if (!$('#ok').checked) { $('#err').textContent = 'Necesitamos tu permiso para crear la tarjeta.'; return; }
@@ -376,7 +405,7 @@ function recuperar() {
       <div class="campo"><label for="pin">Tu código</label><input id="pin" class="pin" inputmode="numeric" maxlength="4" autocomplete="off" required></div>
       <p class="error" id="err"></p><button class="btn ancho" id="go">Entrar</button></form>
     <p class="nota" style="text-align:center;margin-top:14px">¿Olvidaste tu código? Pídele a recepción que te ayude.</p>
-    <p style="text-align:center"><button class="enlace" onclick="registro()">Crear una tarjeta nueva</button></p></section>`;
+    <p style="text-align:center"><button class="enlace" onclick="bienvenida()">Volver</button></p></section>`;
   $('#f').onsubmit = async (ev) => {
     ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
     try {
