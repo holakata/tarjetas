@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F4F0">
+<title>Panel de recepción</title>
+<link rel="stylesheet" href="../comun.css">
+<style>
+  .login { max-width: 400px; margin: 0 auto; padding: 60px 20px; }
+  .login h1 { font-family: "Gloock", serif; font-weight: 400; font-size: 32px; line-height: 1.1; margin-bottom: 6px; }
+  .login > p { color: var(--tinta-2); margin-bottom: 26px; }
+
+  .barra { position: sticky; top: 0; z-index: 10; background: rgba(246,244,240,.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--linea); }
+  .barra-in { max-width: 1100px; margin: 0 auto; padding: 12px 18px; display: flex; align-items: center; gap: 12px; }
+  .mono { width: 40px; height: 40px; border-radius: 12px; background: var(--marca); color: #fff; display: grid; place-items: center; font-family: "Gloock", serif; font-size: 20px; flex: none; }
+  .barra h1 { font-size: 16px; font-weight: 700; line-height: 1.1; }
+  .barra p { font-size: 12px; color: var(--tinta-2); }
+  .barra .salir { margin-left: auto; background: none; border: 0; color: var(--tinta-2); font-size: 14px; cursor: pointer; padding: 10px; }
+  .tabs { max-width: 1100px; margin: 0 auto; padding: 0 12px; display: flex; gap: 4px; overflow-x: auto; }
+  .tab { background: none; border: 0; padding: 12px 14px; font-weight: 600; font-size: 15px; color: var(--tinta-2); border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; min-height: 48px; }
+  .tab.on { color: var(--tinta); border-color: var(--marca); }
+
+  .cont { max-width: 1100px; margin: 0 auto; padding: 22px 18px 80px; }
+  .tarjeta { background: var(--blanco); border-radius: var(--radio); padding: 22px; box-shadow: var(--sombra); }
+  h2.tit { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .sub { color: var(--tinta-2); margin-bottom: 18px; }
+
+  /* Mostrador */
+  .mostrador { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 10px 0; }
+  .mostrador .qrbox { background: #fff; padding: 18px; border-radius: 28px; box-shadow: var(--sombra); width: min(78vw, 58vh, 460px); }
+  .mostrador .qrbox svg { width: 100%; height: auto; display: block; }
+  .mostrador h2 { font-family: "Gloock", serif; font-weight: 400; font-size: clamp(28px, 4.5vw, 44px); line-height: 1.1; margin: 0 0 6px; }
+  .mostrador p { color: var(--tinta-2); margin-bottom: 20px; }
+  .barrita { width: min(78vw, 58vh, 460px); height: 6px; background: var(--linea); border-radius: 3px; margin-top: 16px; overflow: hidden; }
+  .barrita i { display: block; height: 100%; background: var(--marca); transition: width 1s linear; }
+  .mostrador .seg { font-size: 13px; color: var(--tinta-2); margin-top: 8px; }
+  body.full .barra { display: none; }
+  body.full .cont { padding-top: 6vh; }
+
+  /* Canjear */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+  #lector { width: 100%; border-radius: 18px; overflow: hidden; background: #111; min-height: 260px; }
+  #lector video { border-radius: 18px; }
+  .codigo-in { font-family: ui-monospace, Menlo, monospace; letter-spacing: .25em; text-transform: uppercase; text-align: center; font-size: 22px; font-weight: 700; }
+  .resultado { border: 2px solid var(--marca); }
+  .resultado .tipo { display: inline-block; background: var(--fondo-marca); color: var(--marca-2); font-weight: 700; font-size: 13px; padding: 5px 12px; border-radius: 999px; margin-bottom: 10px; }
+  .resultado h3 { font-size: 24px; margin-bottom: 4px; }
+  .resultado .det { color: var(--tinta-2); margin-bottom: 16px; }
+  .exito { text-align: center; padding: 26px 10px; }
+  .exito .circ { width: 70px; height: 70px; border-radius: 50%; background: var(--ok); color: #fff; display: grid; place-items: center; margin: 0 auto 12px; }
+
+  /* Clientes */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 18px; }
+  .stat { background: var(--blanco); border-radius: 18px; padding: 16px; box-shadow: var(--sombra); }
+  .stat b { font-family: "Gloock", serif; font-weight: 400; font-size: 34px; line-height: 1; display: block; }
+  .stat span { font-size: 13px; color: var(--tinta-2); }
+  .lista { list-style: none; }
+  .lista li { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-top: 1px solid var(--linea); }
+  .lista li:first-child { border-top: 0; }
+  .av { width: 40px; height: 40px; border-radius: 50%; background: var(--fondo-marca); color: var(--marca-2); display: grid; place-items: center; font-weight: 700; flex: none; }
+  .lista .info { flex: 1; min-width: 0; }
+  .lista .info b { display: block; font-size: 15px; }
+  .lista .info span { font-size: 13px; color: var(--tinta-2); }
+  .puntos { display: flex; gap: 3px; }
+  .puntos i { width: 8px; height: 8px; border-radius: 50%; background: var(--linea); }
+  .puntos i.on { background: var(--marca); }
+  .chip { font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: var(--fondo-marca); color: var(--marca-2); white-space: nowrap; }
+  .wa { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border-radius: 12px; background: #1F8F55; color: #fff; font-weight: 600; font-size: 14px; text-decoration: none; white-space: nowrap; }
+  .seccion { margin-bottom: 18px; }
+  .seccion h3 { font-size: 16px; margin-bottom: 4px; }
+  .vacio { color: var(--tinta-2); font-size: 14px; padding: 8px 0; }
+
+  /* Regalos */
+  .tipos { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tipos label { flex: 1; margin: 0; }
+  .tipos input { display: none; }
+  .tipos span { display: flex; align-items: center; justify-content: center; min-height: 48px; border: 1.5px solid var(--linea); border-radius: 12px; font-weight: 600; color: var(--tinta); cursor: pointer; background: var(--blanco); }
+  .tipos input:checked + span { border-color: var(--marca-2); background: var(--marca-2); color: #fff; }
+  .creado { background: var(--fondo-marca); border-radius: 18px; padding: 18px; margin-top: 16px; }
+  .creado .link { font-family: ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; background: #fff; border-radius: 10px; padding: 10px; margin: 10px 0 12px; }
+  .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+  .estado { font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; }
+  .estado.activa { background: #E3F2EA; color: var(--ok); }
+  .estado.usada { background: #EEE; color: #666; }
+  @media (max-width: 520px) { .stat b { font-size: 26px; } }
+</style>
+</head>
+<body>
+<div id="app"><p class="cargando">Cargando…</p></div>
+
+<script src="../vendor/supabase.js"></script>
+<script src="../vendor/qrcode.js"></script>
+<script src="../vendor/html5-qrcode.min.js"></script>
+<script src="../comun.js"></script>
+<script>
+const BASE = location.href.replace(/panel\/.*$/, '');
+let NEG = null, DATOS = null, pestaña = 'mostrador', tTimer = null, cTimer = null, lector = null;
+const CHECK = '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.2L19 7"/></svg>';
+
+async function iniciar() {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) return login();
+  try {
+    NEG = await rpc('panel_negocio');
+    if (!NEG) { await sb.auth.signOut(); return login('Esta cuenta no tiene un negocio asignado.'); }
+    aplicarMarca(NEG.config); document.title = 'Recepción · ' + NEG.nombre;
+    marco(); ir(store.get('kata-pestana') || 'mostrador');
+  } catch (e) { await sb.auth.signOut(); login(msg(e)); }
+}
+
+function login(error = '') {
+  $('#app').innerHTML = `<div class="login"><h1>Panel de recepción</h1><p>Entra con la cuenta de tu negocio.</p>
+    <form id="f" novalidate>
+      <div class="campo"><label for="em">Correo</label><input id="em" type="email" autocomplete="username" required></div>
+      <div class="campo"><label for="pw">Contraseña</label><input id="pw" type="password" autocomplete="current-password" required></div>
+      <p class="error" id="err">${esc(error)}</p><button class="btn ancho" id="go">Entrar</button></form></div>`;
+  $('#f').onsubmit = async (ev) => {
+    ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
+    const { error: e } = await sb.auth.signInWithPassword({ email: $('#em').value.trim(), password: $('#pw').value });
+    if (e) { $('#err').textContent = 'El correo o la contraseña no coinciden.'; $('#go').disabled = false; return; }
+    iniciar();
+  };
+}
+
+function marco() {
+  $('#app').innerHTML = `<header class="barra"><div class="barra-in"><div class="mono">${esc(NEG.nombre.trim()[0])}</div>
+    <div><h1>${esc(NEG.nombre)}</h1><p>Panel de recepción</p></div><button class="salir" onclick="salir()">Salir</button></div>
+    <nav class="tabs">
+      <button class="tab" data-t="mostrador">QR del mostrador</button>
+      <button class="tab" data-t="canjear">Canjear</button>
+      <button class="tab" data-t="clientes">Clientes</button>
+      <button class="tab" data-t="regalos">Tarjetas de regalo</button>
+    </nav></header><main class="cont" id="cont"></main>`;
+  $$('.tab').forEach((b) => (b.onclick = () => ir(b.dataset.t)));
+}
+
+async function salir() { await detenerLector(); await sb.auth.signOut(); location.reload(); }
+
+async function ir(t) {
+  pestaña = t; store.set('kata-pestana', t);
+  $$('.tab').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
+  clearTimeout(tTimer); clearInterval(cTimer); await detenerLector();
+  document.body.classList.remove('full');
+  ({ mostrador, canjear, clientes, regalos })[t]();
+}
+
+/* ---------- QR del mostrador ---------- */
+function mostrador() {
+  $('#cont').innerHTML = `<div class="mostrador"><h2>Escanea y suma tu visita</h2><p>Abre la cámara de tu celular y apunta aquí.</p>
+    <div class="qrbox" id="qr"></div><div class="barrita"><i id="bar"></i></div><div class="seg" id="seg">&nbsp;</div>
+    <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><button class="btn claro" onclick="pantallaCompleta()">Pantalla completa</button></div></div>`;
+  refrescarQR();
+}
+async function refrescarQR() {
+  if (pestaña !== 'mostrador') return;
+  try {
+    const r = await rpc('mostrador_token');
+    $('#qr').innerHTML = qrSVG(`${BASE}t/?n=${encodeURIComponent(NEG.slug)}&q=${r.token}`, 420);
+    let s = r.segundos;
+    const pinta = () => { const b = $('#bar'); if (!b) return; b.style.width = (s / 30 * 100) + '%'; $('#seg').textContent = `El código cambia en ${s} s`; };
+    pinta(); clearInterval(cTimer);
+    cTimer = setInterval(() => { s = Math.max(0, s - 1); pinta(); }, 1000);
+    tTimer = setTimeout(refrescarQR, r.segundos * 1000 + 400);
+  } catch (e) { $('#seg').textContent = msg(e); tTimer = setTimeout(refrescarQR, 5000); }
+}
+function pantallaCompleta() {
+  document.body.classList.toggle('full');
+  const el = document.documentElement;
+  if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  else if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+}
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) document.body.classList.remove('full'); });
+
+/* ---------- Canjear ---------- */
+function canjear() {
+  $('#cont').innerHTML = `<h2 class="tit">Canjear</h2><p class="sub">Premios, regalos de cumpleaños y tarjetas de regalo se canjean igual: escanea el QR del cliente o escribe su código.</p>
+    <div class="grid2"><div class="tarjeta"><div id="lector"></div><p class="nota" id="camnota" style="margin-top:10px">El navegador te va a pedir permiso para usar la cámara.</p>
+      <button class="btn claro ancho" id="camBtn" style="margin-top:10px" onclick="iniciarLector()">Abrir cámara</button></div>
+    <div><div class="tarjeta"><label for="cod">Código del cliente</label><input id="cod" class="codigo-in" maxlength="6" autocomplete="off" placeholder="······">
+      <button class="btn ancho" style="margin-top:12px" onclick="buscar($('#cod').value)">Buscar</button></div>
+      <div id="res" style="margin-top:16px"></div></div></div>`;
+  $('#cod').addEventListener('keydown', (e) => { if (e.key === 'Enter') buscar(e.target.value); });
+}
+async function iniciarLector() {
+  try {
+    lector = new Html5Qrcode('lector');
+    await lector.start({ facingMode: 'environment' }, { fps: 10, qrbox: 220 }, (txt) => { detenerLector(); buscar(txt); });
+    $('#camBtn').classList.add('oculto'); $('#camnota').textContent = 'Apunta al QR que muestra el cliente.';
+  } catch (e) { $('#camnota').textContent = 'No se pudo abrir la cámara. Escribe el código a la derecha.'; lector = null; }
+}
+async function detenerLector() { if (lector) { try { await lector.stop(); lector.clear(); } catch (e) {} lector = null; } const b = $('#camBtn'); if (b) b.classList.remove('oculto'); }
+
+async function buscar(cod) {
+  cod = (cod || '').trim().toUpperCase();
+  if (cod.length < 6) { toast('El código tiene 6 caracteres.', 'mal'); return; }
+  try {
+    const k = await rpc('canje_ver', { p_codigo: cod });
+    let titulo, det, extra = '';
+    if (k.tipo === 'regalo') {
+      titulo = 'Para ' + k.para; det = (k.de ? 'De ' + k.de + ' · ' : '') + (k.regalo_tipo === 'servicio' ? k.servicio : 'Saldo ' + dinero(k.saldo));
+      if (k.regalo_tipo === 'monto') extra = `<div class="campo"><label for="mto">¿Cuánto se consumió? (máximo ${dinero(k.saldo)})</label><input id="mto" inputmode="decimal" placeholder="0.00"></div>`;
+    } else { titulo = k.cliente; det = k.detalle + ' · ' + telBonito(k.tel); }
+    const et = { premio: 'Premio de sellos', cumple: 'Regalo de cumpleaños', regalo: 'Tarjeta de regalo' }[k.tipo];
+    $('#res').innerHTML = `<div class="tarjeta resultado"><span class="tipo">${et}</span><h3>${esc(titulo)}</h3><p class="det">${esc(det)}</p>${extra}
+      <button class="btn ancho" id="conf">Confirmar entrega</button><button class="enlace" style="width:100%;margin-top:6px" onclick="$('#res').innerHTML='';$('#cod').value=''">Cancelar</button></div>`;
+    $('#conf').onclick = async () => {
+      $('#conf').disabled = true;
+      try {
+        const monto = $('#mto') ? parseFloat(($('#mto').value || '').replace(',', '.')) : null;
+        await rpc('canje_confirmar', { p_codigo: cod, p_monto: monto });
+        $('#res').innerHTML = `<div class="tarjeta exito"><div class="circ">${CHECK}</div><h3>Entregado</h3><p class="nota">Quedó marcado como usado. El cliente lo ve en su celular.</p>
+          <button class="btn ancho" style="margin-top:16px" onclick="$('#res').innerHTML='';$('#cod').value='';iniciarLector()">Canjear otro</button></div>`;
+        $('#cod').value = '';
+      } catch (e) { toast(msg(e), 'mal'); $('#conf').disabled = false; }
+    };
+  } catch (e) { $('#res').innerHTML = ''; toast(msg(e), 'mal'); }
+}
+
+/* ---------- Clientes ---------- */
+async function clientes() {
+  $('#cont').innerHTML = '<p class="cargando">Cargando clientes…</p>';
+  try { DATOS = await rpc('panel_resumen'); } catch (e) { $('#cont').innerHTML = `<p class="cargando">${esc(msg(e))}</p>`; return; }
+  const meta = NEG.config.meta || 6, mes = new Date().getMonth() + 1;
+  const cumple = DATOS.lista.filter((c) => c.cumple_mes === mes);
+  const lejos = DATOS.lista.filter((c) => c.dias_sin_venir !== null && c.dias_sin_venir >= 30);
+  const fila = (c, accion = '') => `<li><div class="av">${esc(c.nombre.trim()[0])}</div><div class="info"><b>${esc(c.nombre)}</b>
+      <span>${telBonito(c.tel)} · ${c.ultima ? 'última visita ' + fechaCorta(c.ultima) : 'sin visitas'}</span></div>
+      ${c.premios_listos > 0 ? '<span class="chip">Premio listo</span>' : `<div class="puntos">${Array.from({ length: meta }, (_, i) => `<i class="${i < c.sellos ? 'on' : ''}"></i>`).join('')}</div>`}${accion}</li>`;
+  const waTxt = (c, tipo) => {
+    const n = c.nombre.split(' ')[0], link = `${BASE}t/?n=${NEG.slug}`;
+    const t = tipo === 'cumple'
+      ? `Hola ${n}, feliz cumpleaños de parte de ${NEG.nombre}. Este mes tienes un regalo esperándote en tu tarjeta: ${link}`
+      : `Hola ${n}, te extrañamos en ${NEG.nombre}. Tu tarjeta va en ${c.sellos} de ${meta} sellos. ¿Te agendamos esta semana?`;
+    return `<a class="wa" target="_blank" rel="noopener" href="https://wa.me/507${c.tel}?text=${encodeURIComponent(t)}">WhatsApp</a>`;
+  };
+  $('#cont').innerHTML = `<div class="stats"><div class="stat"><b>${DATOS.clientes}</b><span>clientes con tarjeta</span></div>
+      <div class="stat"><b>${DATOS.sellos_mes}</b><span>sellos este mes</span></div><div class="stat"><b>${DATOS.premios_mes}</b><span>premios entregados</span></div></div>
+    ${cumple.length ? `<div class="tarjeta seccion"><h3>Cumpleaños de ${MESES[mes - 1]}</h3><ul class="lista">${cumple.map((c) => fila(c, waTxt(c, 'cumple'))).join('')}</ul></div>` : ''}
+    ${lejos.length ? `<div class="tarjeta seccion"><h3>Hace más de 30 días que no vienen</h3><ul class="lista">${lejos.map((c) => fila(c, waTxt(c, 'lejos'))).join('')}</ul></div>` : ''}
+    <div class="tarjeta"><h3 style="font-size:16px;margin-bottom:10px">Todos los clientes</h3><input id="bus" placeholder="Buscar por nombre o WhatsApp" style="margin-bottom:6px">
+      <ul class="lista" id="todos"></ul></div>`;
+  const pintar = (q = '') => {
+    const f = DATOS.lista.filter((c) => !q || c.nombre.toLowerCase().includes(q) || c.tel.includes(q.replace(/\D/g, '') || '§'));
+    $('#todos').innerHTML = f.length ? f.map((c) => fila(c)).join('') : '<li class="vacio">Todavía no hay clientes.</li>';
+  };
+  pintar(); $('#bus').oninput = (e) => pintar(e.target.value.toLowerCase().trim());
+}
+
+/* ---------- Tarjetas de regalo ---------- */
+async function regalos() {
+  const vence = new Date(Date.now() + 90 * 864e5).toISOString().slice(0, 10);
+  const serv = (NEG.config.servicios || []).map((s) => `<option>${esc(s)}</option>`).join('');
+  $('#cont').innerHTML = `<div class="grid2"><div class="tarjeta"><h2 class="tit">Nueva tarjeta de regalo</h2><p class="sub">Llénala cuando alguien la compre. Se crea sola y la mandas por WhatsApp.</p>
+    <form id="f" novalidate>
+      <div class="tipos"><label><input type="radio" name="tp" value="servicio" checked><span>Un servicio</span></label><label><input type="radio" name="tp" value="monto"><span>Un monto</span></label></div>
+      <div class="campo" id="cServ"><label for="sv">Servicio</label><input id="sv" list="servs" placeholder="Ej. Masaje relajante de 60 minutos"><datalist id="servs">${serv}</datalist></div>
+      <div class="campo oculto" id="cMto"><label for="mt">Monto (B/.)</label><input id="mt" inputmode="decimal" placeholder="50"></div>
+      <div class="fila"><div class="campo"><label for="pa">Para</label><input id="pa" placeholder="Mamá"></div><div class="campo"><label for="de">De</label><input id="de" placeholder="Andrea"></div></div>
+      <div class="campo"><label for="ms">Mensaje (opcional)</label><textarea id="ms" maxlength="180" placeholder="Para que te consientas un rato."></textarea></div>
+      <div class="campo"><label for="vc">Válida hasta</label><input id="vc" type="date" value="${vence}"></div>
+      <p class="error" id="err"></p><button class="btn ancho" id="go">Crear tarjeta de regalo</button></form><div id="hecho"></div></div>
+    <div class="tarjeta"><h2 class="tit" style="font-size:18px">Tarjetas creadas</h2><ul class="lista" id="lst"><li class="vacio">Cargando…</li></ul></div></div>`;
+  $$('input[name=tp]').forEach((r) => (r.onchange = () => { const m = $('input[name=tp]:checked').value === 'monto'; $('#cServ').classList.toggle('oculto', m); $('#cMto').classList.toggle('oculto', !m); }));
+  $('#f').onsubmit = async (ev) => {
+    ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
+    const tipo = $('input[name=tp]:checked').value;
+    try {
+      const r = await rpc('regalo_crear', { p_para: $('#pa').value, p_de: $('#de').value, p_mensaje: $('#ms').value, p_tipo: tipo, p_servicio: $('#sv').value,
+        p_monto: tipo === 'monto' ? parseFloat(($('#mt').value || '').replace(',', '.')) : null, p_vence: $('#vc').value || null });
+      const link = `${BASE}regalo/?g=${r.codigo}`, para = $('#pa').value.trim();
+      const txt = `Hola, tienes una tarjeta de regalo de ${NEG.nombre}${$('#de').value.trim() ? ' de parte de ' + $('#de').value.trim() : ''}. Ábrela aquí: ${link}`;
+      $('#f').reset(); $('#vc').value = vence; $('#cServ').classList.remove('oculto'); $('#cMto').classList.add('oculto');
+      $('#hecho').innerHTML = `<div class="creado"><b>Lista la tarjeta para ${esc(para)}</b><div class="link">${esc(link)}</div>
+        <div class="acciones"><a class="wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">Enviar por WhatsApp</a>
+        <button class="btn claro" style="min-height:40px" onclick="navigator.clipboard.writeText('${link}').then(()=>toast('Enlace copiado','ok'))">Copiar enlace</button>
+        <a class="btn claro" style="min-height:40px" target="_blank" href="${link}">Ver</a></div></div>`;
+      listaRegalos();
+    } catch (e) { $('#err').textContent = msg(e); }
+    $('#go').disabled = false;
+  };
+  listaRegalos();
+}
+async function listaRegalos() {
+  try {
+    const d = await rpc('panel_resumen');
+    $('#lst').innerHTML = d.regalos.length ? d.regalos.map((g) => `<li><div class="info"><b>Para ${esc(g.para)}${g.de ? ' · de ' + esc(g.de) : ''}</b>
+      <span>${g.tipo === 'servicio' ? esc(g.servicio) : dinero(g.saldo) + ' de ' + dinero(g.monto)} · ${fechaCorta(g.creado)}</span></div>
+      <span class="estado ${g.estado}">${{ activa: 'Activa', usada: 'Usada', anulada: 'Anulada' }[g.estado]}</span>
+      <a class="enlace" target="_blank" href="${BASE}regalo/?g=${g.codigo}">Ver</a></li>`).join('') : '<li class="vacio">Todavía no hay tarjetas.</li>';
+  } catch (e) { $('#lst').innerHTML = `<li class="vacio">${esc(msg(e))}</li>`; }
+}
+
+iniciar();
+</script>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F4F0">
+<title>Tarjeta de regalo</title>
+<link rel="stylesheet" href="../comun.css">
+<style>
+  .app { max-width: 460px; margin: 0 auto; padding: 26px 18px 60px; }
+  .intro { text-align: center; margin-bottom: 22px; }
+  .intro p { color: var(--tinta-2); font-size: 15px; }
+  .intro h1 { font-family: "Gloock", serif; font-weight: 400; font-size: 30px; line-height: 1.1; margin-top: 4px; }
+  .giftcard { position: relative; aspect-ratio: 1.58; border-radius: 24px; overflow: hidden; color: #fff; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;
+    background: radial-gradient(120% 140% at 100% 100%, rgba(255,255,255,.18) 0%, transparent 45%), linear-gradient(150deg, var(--marca) 0%, var(--marca-2) 100%);
+    box-shadow: 0 2px 4px rgba(18,58,94,.12), 0 22px 44px rgba(18,58,94,.28); animation: entra .8s cubic-bezier(.2,.9,.3,1.2); }
+  @keyframes entra { from { transform: translateY(26px) rotate(-2deg) scale(.96); opacity: 0; } }
+  .giftcard .neg { font-family: "Gloock", serif; font-size: 22px; }
+  .giftcard .que { font-size: 13px; opacity: .8; }
+  .giftcard .valor { font-family: "Gloock", serif; font-size: 34px; line-height: 1.05; }
+  .giftcard .pd { display: flex; justify-content: space-between; font-size: 14px; }
+  .giftcard .sello-estado { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,.95); color: var(--marca-2); font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 999px; }
+  .mensaje { background: var(--blanco); border-radius: var(--radio); padding: 20px; margin-top: 18px; box-shadow: var(--sombra); font-family: "Gloock", serif; font-size: 20px; line-height: 1.35; }
+  .mensaje span { display: block; font-family: "Inst", sans-serif; font-size: 14px; color: var(--tinta-2); margin-top: 10px; }
+  .datos { background: var(--blanco); border-radius: var(--radio); padding: 6px 20px; margin-top: 14px; box-shadow: var(--sombra); }
+  .datos div { display: flex; justify-content: space-between; padding: 12px 0; border-top: 1px solid var(--linea); font-size: 15px; }
+  .datos div:first-child { border-top: 0; }
+  .datos span:first-child { color: var(--tinta-2); }
+  .acc { margin-top: 18px; }
+  .canje { position: fixed; inset: 0; background: rgba(17,24,33,.55); display: flex; align-items: flex-end; justify-content: center; z-index: 50; }
+  .hoja { background: var(--blanco); width: 100%; max-width: 460px; border-radius: 26px 26px 0 0; padding: 26px 22px calc(26px + env(safe-area-inset-bottom)); text-align: center; animation: sube .35s ease; }
+  @keyframes sube { from { transform: translateY(40px); opacity: 0; } }
+  .hoja .qr { margin: 18px auto 10px; width: 220px; } .hoja .qr svg { width: 100%; height: auto; display: block; }
+  .codigo { font-family: ui-monospace, Menlo, monospace; font-size: 30px; letter-spacing: .18em; font-weight: 700; margin-bottom: 6px; }
+  .kata { text-align: center; font-size: 12px; color: #9AA1AA; margin-top: 34px; }
+</style>
+</head>
+<body>
+<div class="app"><main id="vista"><p class="cargando">Abriendo tu regalo…</p></main><p class="kata">Tarjeta hecha por Kata Studio</p></div>
+<script src="../vendor/supabase.js"></script>
+<script src="../vendor/qrcode.js"></script>
+<script src="../comun.js"></script>
+<script>
+const codigoRegalo = params.get('g');
+let R = null, sondeo = null;
+
+async function cargar() {
+  try {
+    R = await rpc('regalo_ver', { p_codigo: codigoRegalo });
+    if (!R) { $('#vista').innerHTML = '<p class="cargando">No encontramos esta tarjeta de regalo.</p>'; return; }
+    aplicarMarca(R.negocio.config); document.title = 'Tarjeta de regalo · ' + R.negocio.nombre;
+    pintar();
+  } catch (e) { $('#vista').innerHTML = `<p class="cargando">${esc(msg(e))}</p>`; }
+}
+
+function pintar() {
+  const activa = R.estado === 'activa';
+  const valor = R.tipo === 'servicio' ? esc(R.servicio) : dinero(R.saldo);
+  const etiqueta = { usada: 'Ya usada', vencida: 'Vencida', anulada: 'Anulada' }[R.estado];
+  $('#vista').innerHTML = `
+    <div class="intro"><p>${R.de ? esc(R.de) + ' te regaló' : 'Te regalaron'}</p><h1>Una visita a ${esc(R.negocio.nombre)}</h1></div>
+    <div class="giftcard">${etiqueta ? `<span class="sello-estado">${etiqueta}</span>` : ''}
+      <div class="neg">${esc(R.negocio.nombre)}</div>
+      <div><div class="que">${R.tipo === 'servicio' ? 'Tarjeta de regalo' : (R.saldo < R.monto ? 'Saldo disponible' : 'Tarjeta de regalo por')}</div><div class="valor">${valor}</div></div>
+      <div class="pd"><span>Para: ${esc(R.para)}</span>${R.vence ? `<span>Hasta el ${fechaCorta(R.vence)}</span>` : ''}</div>
+    </div>
+    ${R.mensaje ? `<div class="mensaje">“${esc(R.mensaje)}”${R.de ? `<span>${esc(R.de)}</span>` : ''}</div>` : ''}
+    <div class="datos">
+      <div><span>Cómo usarla</span><span>Muéstrala en recepción</span></div>
+      ${R.negocio.config.whatsapp ? `<div><span>Para agendar</span><a href="https://wa.me/${esc(R.negocio.config.whatsapp)}" style="color:var(--marca-2);font-weight:600">WhatsApp</a></div>` : ''}
+      ${R.tipo === 'monto' && R.usos.length ? `<div><span>Usado hasta hoy</span><span>${dinero(R.monto - R.saldo)}</span></div>` : ''}
+    </div>
+    <div class="acc">${activa ? '<button class="btn ancho" onclick="usar()">Usar en recepción</button>' : ''}</div>`;
+}
+
+async function usar() {
+  try {
+    const r = await rpc('regalo_pedir_canje', { p_codigo: codigoRegalo });
+    const capa = document.createElement('div'); capa.className = 'canje'; capa.id = 'capa';
+    capa.innerHTML = `<div class="hoja"><h3 style="font-size:20px">Tu tarjeta de regalo</h3><p class="nota">Muestra esta pantalla en recepción.</p>
+      <div class="qr">${qrSVG(r.codigo, 220)}</div><div class="codigo">${r.codigo}</div>
+      <p class="nota">Si no lo pueden escanear, díctales el código.</p>
+      <button class="btn claro ancho" style="margin-top:18px" onclick="cerrar()">Cerrar</button></div>`;
+    capa.addEventListener('click', (ev) => { if (ev.target === capa) cerrar(); });
+    document.body.appendChild(capa);
+    const saldoAntes = R.saldo, estadoAntes = R.estado;
+    clearInterval(sondeo);
+    sondeo = setInterval(async () => {
+      const n = await rpc('regalo_ver', { p_codigo: codigoRegalo }).catch(() => null);
+      if (n && (n.estado !== estadoAntes || n.saldo !== saldoAntes)) { R = n; cerrar(); toast(n.tipo === 'monto' && n.estado === 'activa' ? 'Listo. Te quedan ' + dinero(n.saldo) + '.' : 'Listo, disfrútalo.', 'ok'); }
+    }, 3000);
+  } catch (e) { toast(msg(e), 'mal'); }
+}
+function cerrar() { clearInterval(sondeo); const c = $('#capa'); if (c) c.remove(); pintar(); }
+cargar();
+</script>
+</body>
+</html>
