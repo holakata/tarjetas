@@ -74,6 +74,7 @@
   .vip-f small { color: #D6B680; font-size: 12px; }
   .vip-f h3 { font-family: "Gloock", serif; font-weight: 400; font-size: 28px; line-height: 1.05; margin-top: 2px; }
   .vip-f .vig { font-size: 13px; opacity: .75; margin-top: 4px; }
+  .vip-f .renueva { color: #D6B680; opacity: 1; }
   .vip-f .ben { margin-top: auto; font-size: 13px; line-height: 1.55; }
   .vip-f .ben span { display: block; } .vip-f .ben span::before { content: "·"; color: #D6B680; font-weight: 700; margin-right: 8px; }
   .vip-f .voltear { background: rgba(214,182,128,.18); color: #F4EBDD; }
@@ -234,7 +235,7 @@ function pintar(animar = false) {
         <div class="f-pie"><span>${esc(E.premio || '')}</span>${giraSellos ? `<span class="voltear">${I.qr}</span>` : ''}</div></div>
       ${giraSellos ? atras : ''}</div></div>`;
   const pVip = V && V.miembro ? `<div class="pase" id="p1"><div class="giro" onclick="voltear(this)">
-      <div class="cara vip-f"><small>Miembro</small><h3>${esc(V.nombre)}</h3><div class="vig">${V.hasta ? 'Activa hasta el ' + fechaCorta(V.hasta) : 'Membresía activa'}</div>
+      <div class="cara vip-f"><small>Miembro</small><h3>${esc(V.nombre)}</h3><div class="vig">${vigencia(V)}</div>
         <div class="ben">${(V.beneficios || []).slice(0, 3).map((b) => `<span>${esc(b)}</span>`).join('')}</div>
         <div class="f-pie" style="justify-content:flex-end"><span class="voltear">${I.qr}</span></div></div>
       ${recep() ? atras : ''}</div></div>` : '';
@@ -264,6 +265,14 @@ function pintar(animar = false) {
   if (w && pVip) w.onscroll = () => { const i = w.scrollLeft > (w.scrollWidth - w.clientWidth) / 2 ? 1 : 0; $$('#pn i').forEach((d, k) => d.classList.toggle('on', k === i)); };
   if (recep()) { cargarQR(); vigilar(); }
   if (!store.get('kata-vio-guardar-' + slug)) { store.set('kata-vio-guardar-' + slug, '1'); setTimeout(hojaGuardar, 1500); }
+}
+
+function vigencia(V) {
+  if (!V.hasta) return 'Membresía activa';
+  const hoy = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Panama' })); hoy.setHours(12, 0, 0, 0);
+  const d = Math.round((new Date(V.hasta + 'T12:00:00') - hoy) / 864e5);
+  if (d > 7) return 'Activa hasta el ' + fechaCorta(V.hasta);
+  return `<span class="renueva">${d <= 0 ? 'Vence hoy' : d === 1 ? 'Vence mañana' : 'Vence en ' + d + ' días'}</span> · renuévala en recepción`;
 }
 
 function voltear(el) {

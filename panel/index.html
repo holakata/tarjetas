@@ -88,6 +88,12 @@
   .estado { font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; }
   .estado.activa { background: #E3F2EA; color: var(--ok); }
   .estado.usada { background: #EEE; color: #666; }
+  .estado.pronto { background: #FDF0DC; color: #9A5B00; } .estado.vencida { background: #FBE7E5; color: #A23A2F; }
+  .filtros { display: flex; gap: 8px; overflow-x: auto; margin: 4px 0 10px; scrollbar-width: none; }
+  .filtros::-webkit-scrollbar { display: none; }
+  .filtros button { border: 1px solid var(--linea); background: #fff; color: var(--tinta-2); font: inherit; font-size: 14px; font-weight: 600; padding: 8px 12px; border-radius: 999px; white-space: nowrap; cursor: pointer; min-height: 38px; }
+  .filtros button.on { background: var(--marca-2); border-color: var(--marca-2); color: #fff; }
+  .filtros button i { font-style: normal; opacity: .7; margin-left: 4px; }
   @media (max-width: 520px) { .stat b { font-size: 26px; } }
 </style>
 </head>
@@ -321,7 +327,7 @@ async function regalos() {
       <div class="campo"><label for="ms">Mensaje (opcional)</label><textarea id="ms" maxlength="180" placeholder="Para que te consientas un rato."></textarea></div>
       <div class="campo"><label for="vc">Válida hasta</label><input id="vc" type="date" value="${vence}"></div>
       <p class="error" id="err"></p><button class="btn ancho" id="go">Crear tarjeta de regalo</button></form><div id="hecho"></div></div>
-    <div class="tarjeta"><h2 class="tit" style="font-size:18px">Tarjetas creadas</h2><ul class="lista" id="lst"><li class="vacio">Cargando…</li></ul></div></div>`;
+    <div class="tarjeta"><h2 class="tit" style="font-size:18px">Tarjetas creadas</h2><div class="filtros" id="fil"></div><ul class="lista" id="lst"><li class="vacio">Cargando…</li></ul></div></div>`;
   $$('input[name=tp]').forEach((r) => (r.onchange = () => { const m = $('input[name=tp]:checked').value === 'monto'; $('#cServ').classList.toggle('oculto', m); $('#cMto').classList.toggle('oculto', !m); }));
   $('#f').onsubmit = async (ev) => {
     ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
@@ -380,15 +386,42 @@ function waNum(t) { t = String(t || '').replace(/\D/g, ''); return t.length <= 8
 function textoRegalo(para, de, link) {
   return `Hola ${para}, ${de ? de + ' te regaló' : 'tienes'} una tarjeta de regalo de ${NEG.nombre}. Ábrela aquí: ${link}`;
 }
+let REGALOS = [], FILTRO_R = 'activas';
+function hoyPty() { return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Panama' })).toISOString().slice(0, 10); }
+function situacion(g) {
+  if (g.estado !== 'activa') return g.estado === 'anulada' ? 'anulada' : 'usada';
+  if (!g.vence) return 'activa';
+  const dias = Math.round((new Date(g.vence + 'T12:00:00') - new Date(hoyPty() + 'T12:00:00')) / 864e5);
+  if (dias < 0) return 'vencida';
+  return dias <= 15 ? 'pronto' : 'activa';
+}
+const diasPara = (v) => Math.round((new Date(v + 'T12:00:00') - new Date(hoyPty() + 'T12:00:00')) / 864e5);
 async function listaRegalos() {
-  try {
-    const d = await rpc('panel_resumen');
-    $('#lst').innerHTML = d.regalos.length ? d.regalos.map((g) => `<li><div class="info"><b>Para ${esc(g.para)}${g.de ? ' · de ' + esc(g.de) : ''}</b>
-      <span>${g.tipo === 'servicio' ? esc(g.servicio) : dinero(g.saldo) + ' de ' + dinero(g.monto)} · ${fechaCorta(g.creado)}</span></div>
-      <span class="estado ${g.estado}">${{ activa: 'Activa', usada: 'Usada', anulada: 'Anulada' }[g.estado]}</span>
-      ${g.tel && g.estado === 'activa' ? `<a class="wa" style="min-height:36px;padding:0 10px" target="_blank" rel="noopener" href="https://wa.me/${waNum(g.tel)}?text=${encodeURIComponent(textoRegalo(g.para, g.de, BASE + 'regalo/?g=' + g.codigo))}">Reenviar</a>` : ''}
-      <a class="enlace" target="_blank" href="${BASE}regalo/?g=${g.codigo}">Ver</a></li>`).join('') : '<li class="vacio">Todavía no hay tarjetas.</li>';
-  } catch (e) { $('#lst').innerHTML = `<li class="vacio">${esc(msg(e))}</li>`; }
+  try { REGALOS = (await rpc('panel_resumen')).regalos; pintarRegalos(); }
+  catch (e) { $('#lst').innerHTML = `<li class="vacio">${esc(msg(e))}</li>`; }
+}
+function pintarRegalos() {
+  const F = {
+    activas: { t: 'Activas', ok: (s) => s === 'activa' || s === 'pronto' },
+    pronto: { t: 'Vencen pronto', ok: (s) => s === 'pronto' },
+    vencidas: { t: 'Vencidas', ok: (s) => s === 'vencida' },
+    usadas: { t: 'Usadas', ok: (s) => s === 'usada' || s === 'anulada' },
+    todas: { t: 'Todas', ok: () => true },
+  };
+  $('#fil').innerHTML = Object.entries(F).map(([k, f]) => `<button class="${k === FILTRO_R ? 'on' : ''}" onclick="FILTRO_R='${k}';pintarRegalos()">${f.t}<i>${REGALOS.filter((g) => f.ok(situacion(g))).length}</i></button>`).join('');
+  const L = REGALOS.filter((g) => F[FILTRO_R].ok(situacion(g)));
+  const vacio = { activas: 'No hay tarjetas activas.', pronto: 'Ninguna vence en los próximos 15 días.', vencidas: 'No hay tarjetas vencidas.', usadas: 'Todavía no se ha usado ninguna.', todas: 'Todavía no hay tarjetas.' }[FILTRO_R];
+  $('#lst').innerHTML = L.length ? L.map((g) => {
+    const st = situacion(g), d = g.vence ? diasPara(g.vence) : null;
+    const et = { activa: 'Activa', pronto: d === 0 ? 'Vence hoy' : `Vence en ${d} d`, vencida: 'Vencida', usada: 'Usada', anulada: 'Anulada' }[st];
+    const cuando = st === 'vencida' ? 'venció el ' + fechaCorta(g.vence) : st === 'usada' || st === 'anulada' ? 'creada el ' + fechaCorta(g.creado) : g.vence ? 'vence el ' + fechaCorta(g.vence) : 'sin vencimiento';
+    const txt = st === 'pronto' ? `Hola ${g.para}, te recordamos que tu tarjeta de regalo de ${NEG.nombre} vence el ${fechaCorta(g.vence)}. ¿Te agendamos tu cita? ${BASE}regalo/?g=${g.codigo}` : textoRegalo(g.para, g.de, BASE + 'regalo/?g=' + g.codigo);
+    return `<li><div class="info"><b>Para ${esc(g.para)}${g.de ? ' · de ' + esc(g.de) : ''}</b>
+      <span>${g.tipo === 'servicio' ? esc(g.servicio) : dinero(g.saldo) + ' de ' + dinero(g.monto)} · ${cuando}</span></div>
+      <span class="estado ${st === 'anulada' ? 'usada' : st}">${et}</span>
+      ${g.tel && (st === 'activa' || st === 'pronto') ? `<a class="wa" style="min-height:36px;padding:0 10px" target="_blank" rel="noopener" href="https://wa.me/${waNum(g.tel)}?text=${encodeURIComponent(txt)}">${st === 'pronto' ? 'Recordar' : 'Reenviar'}</a>` : ''}
+      <a class="enlace" target="_blank" href="${BASE}regalo/?g=${g.codigo}">Ver</a></li>`;
+  }).join('') : `<li class="vacio">${vacio}</li>`;
 }
 
 iniciar();
