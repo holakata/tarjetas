@@ -227,18 +227,17 @@ function pintar(animar = false) {
     else if (i === meta) celdas += `<div class="s meta">${I.regalo}</div>`;
     else celdas += `<div class="s"></div>`;
   }
-  const vipActivo = !!(V && V.miembro), giraSellos = recep() && !vipActivo, giraVip = vipActivo;
+  const vipActivo = !!(V && V.miembro), giraSellos = recep();
   const atras = `<div class="cara atras"><div class="qr" data-qr></div><div class="cod" data-cod>······</div></div>`;
   const pSellos = `<div class="pase" id="p0"><div class="giro${giraSellos ? '' : ' fija'}" onclick="voltear(this)">
       <div class="cara sellos-f"><div class="f-top"><div><small>Tarjeta de cliente</small><b>${esc(E.nombre)}</b></div><div class="cuenta">${llenos}<span> / ${meta}</span></div></div>
         <div class="grid${meta > 6 ? (meta > 8 ? ' m10' : ' m8') : ''}">${celdas}</div>
         <div class="f-pie"><span>${esc(E.premio || '')}</span>${giraSellos ? `<span class="voltear">${I.qr}</span>` : ''}</div></div>
       ${giraSellos ? atras : ''}</div></div>`;
-  const pVip = V && V.miembro ? `<div class="pase" id="p1"><div class="giro" onclick="voltear(this)">
+  const pVip = V && V.miembro ? `<div class="pase" id="p1"><div class="giro${recep() ? ' fija' : ''}" onclick="voltear(this)">
       <div class="cara vip-f"><small>Miembro</small><h3>${esc(V.nombre)}</h3><div class="vig">${vigencia(V)}</div>
         <div class="ben">${(V.beneficios || []).slice(0, 3).map((b) => `<span>${esc(b)}</span>`).join('')}</div>
-        <div class="f-pie" style="justify-content:flex-end"><span class="voltear">${I.qr}</span></div></div>
-      ${recep() ? atras : ''}</div></div>` : '';
+        ${recep() ? '' : `<div class="f-pie" style="justify-content:flex-end"><span class="voltear">${I.qr}</span></div>`}</div></div></div>` : '';
 
   const avisos = [];
   if (E.premios_listos > 0) avisos.push(`<button class="aviso brilla" onclick="hojaPremio('premio')"><span class="ic">${I.regalo}</span><span><b>Tu premio está listo</b><span>${esc(E.premio || '')}</span></span><span class="fl">${I.fl}</span></button>`);
@@ -251,7 +250,7 @@ function pintar(animar = false) {
   const wa = (() => { const t = String(NEG.config.whatsapp || '').replace(/\D/g, ''); return t.length === 8 ? '507' + t : t; })();
   $('#vista').innerHTML = `
     <p class="hola">Hola, <b>${esc(E.nombre.split(' ')[0])}</b></p>
-    <div class="wallet${pVip ? '' : ' uno'}" id="wallet">${pSellos}${pVip}</div>
+    <div class="wallet${pVip ? '' : ' uno'}" id="wallet">${pVip}${pSellos}</div>
     ${pVip ? '<div class="puntos-n" id="pn"><i class="on"></i><i></i></div>' : ''}
     <div class="cuerpo">
       <div class="progreso"><p>${frase}</p><div class="barra"><i id="bar"></i></div></div>

@@ -32,6 +32,47 @@
   @keyframes sube { from { transform: translateY(40px); opacity: 0; } }
   .hoja .qr { margin: 18px auto 10px; width: 220px; } .hoja .qr svg { width: 100%; height: auto; display: block; }
   .codigo { font-family: ui-monospace, Menlo, monospace; font-size: 30px; letter-spacing: .18em; font-weight: 700; margin-bottom: 6px; }
+  /* Sobre con lazo */
+  .escena { position: fixed; inset: 0; z-index: 40; background: radial-gradient(120% 80% at 50% 0%, var(--fondo-marca) 0%, var(--fondo) 65%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; transition: opacity .6s ease; }
+  .escena.fuera { opacity: 0; pointer-events: none; }
+  .escena .de { text-align: center; margin-bottom: min(120px, 14vh); transition: opacity .5s, transform .5s; }
+  .escena .de p { color: var(--tinta-2); font-size: 15px; }
+  .escena .de h1 { font-family: "Gloock", serif; font-weight: 400; font-size: 32px; line-height: 1.1; margin-top: 4px; }
+  .sobre { position: relative; width: min(84vw, 340px); aspect-ratio: 1.45; cursor: pointer; perspective: 1200px; -webkit-tap-highlight-color: transparent; animation: flota 3.6s ease-in-out infinite; }
+  @keyframes flota { 0%, 100% { transform: translateY(0) rotate(-1.2deg); } 50% { transform: translateY(-8px) rotate(1deg); } }
+  .s-fondo, .s-frente, .s-solapa { position: absolute; left: 0; right: 0; transition: opacity .5s ease, transform .5s ease; }
+  .s-fondo { inset: 0; border-radius: 14px; background: #DCD2C2; z-index: 1; }
+  .s-frente { bottom: 0; height: 100%; border-radius: 14px; z-index: 3; background: linear-gradient(170deg, #FBF8F3 0%, #EEE6D9 100%); clip-path: polygon(0 0, 50% 58%, 100% 0, 100% 100%, 0 100%); box-shadow: 0 30px 50px rgba(10,20,40,.25); }
+  .s-frente::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom right, transparent 49.6%, rgba(120,100,70,.12) 50%, transparent 50.4%), linear-gradient(to bottom left, transparent 49.6%, rgba(120,100,70,.12) 50%, transparent 50.4%); }
+  .s-sombra { position: absolute; left: 6%; right: 6%; bottom: -26px; height: 22px; border-radius: 50%; background: rgba(10,20,40,.18); filter: blur(10px); z-index: 0; transition: opacity .5s; }
+  .s-solapa { top: 0; height: 64%; z-index: 4; transform-origin: top center; background: linear-gradient(180deg, #FFFDF9, #F1EADF); clip-path: polygon(0 0, 100% 0, 50% 100%); border-radius: 14px 14px 0 0; transition: transform .7s cubic-bezier(.4,.1,.3,1), z-index 0s .35s, opacity .5s; filter: drop-shadow(0 3px 4px rgba(90,70,40,.18)); }
+  .carta { position: absolute; left: 7%; right: 7%; top: 10%; z-index: 2; aspect-ratio: 1.58; border-radius: 14px; color: #fff; padding: 14px 16px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden;
+    background: radial-gradient(120% 140% at 100% 100%, rgba(255,255,255,.2) 0%, transparent 45%), linear-gradient(150deg, var(--marca) 0%, var(--marca-2) 100%); box-shadow: 0 10px 24px rgba(10,20,40,.3); border: 1px solid rgba(255,255,255,.25);
+    transition: transform .9s cubic-bezier(.2,.8,.2,1); }
+  .carta .neg { font-family: "Gloock", serif; font-size: 16px; } .carta .que { font-size: 10px; opacity: .8; } .carta .valor { font-family: "Gloock", serif; font-size: 22px; line-height: 1.05; } .carta .pd { font-size: 11px; display: flex; justify-content: space-between; }
+  .cinta-v, .cinta-h { position: absolute; z-index: 5; background: linear-gradient(90deg, var(--marca-2), color-mix(in srgb, var(--marca) 70%, #fff 30%) 45%, var(--marca) 60%, var(--marca-2)); transition: transform .5s cubic-bezier(.5,0,.75,0), opacity .4s .2s; }
+  .cinta-v { top: 0; bottom: 0; left: calc(50% - 13px); width: 26px; transform-origin: top; }
+  .cinta-h { left: 0; right: 0; top: calc(56% - 12px); height: 24px; background: linear-gradient(180deg, var(--marca-2), color-mix(in srgb, var(--marca) 70%, #fff 30%) 45%, var(--marca) 60%, var(--marca-2)); transform-origin: right; }
+  .lazo { position: absolute; z-index: 6; width: 120px; left: calc(50% - 60px); top: calc(56% - 50px); filter: drop-shadow(0 6px 8px rgba(0,0,0,.25)); transition: transform .5s cubic-bezier(.5,0,.75,0), opacity .4s .1s; animation: late 2.4s ease-in-out infinite; }
+  @keyframes late { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+  .toca { margin-top: 44px; color: var(--tinta-2); font-size: 14px; display: flex; align-items: center; gap: 8px; transition: opacity .3s; }
+  .toca i { width: 8px; height: 8px; border-radius: 50%; background: var(--marca); animation: late 1.4s ease-in-out infinite; }
+  .escena.desata .sobre { animation: none; }
+  .escena.desata .lazo { animation: none; transform: scale(1.3) rotate(-18deg) translateY(-10px); opacity: 0; }
+  .escena.desata .cinta-v { transform: scaleY(0); opacity: 0; }
+  .escena.desata .cinta-h { transform: scaleX(0); opacity: 0; }
+  .escena.desata .toca { opacity: 0; }
+  .escena.abre .s-solapa { transform: rotateX(180deg); z-index: 1; }
+  .escena.sale .carta { transform: translateY(-82%); }
+  .escena.fin .s-fondo, .escena.fin .s-frente, .escena.fin .s-solapa { opacity: 0; transform: translateY(70px); }
+  .escena.fin .s-sombra { opacity: 0; }
+  .escena.abre .de { opacity: 0; transform: translateY(-12px); }
+  .escena.fin .carta { transform: translateY(-40%) scale(1.12); z-index: 6; }
+  .giftcard.brilla::after { content: ""; position: absolute; top: 0; bottom: 0; width: 45%; left: -60%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent); transform: skewX(-18deg); animation: brillo 1.4s .5s ease-out forwards; }
+  @keyframes brillo { to { left: 130%; } }
+  .giftcard.desde-sobre { animation: crece .7s cubic-bezier(.2,.8,.2,1); }
+  @keyframes crece { from { transform: scale(.92); opacity: .4; } }
+  @media (prefers-reduced-motion: reduce) { .sobre, .lazo, .toca i { animation: none; } }
   .kata { text-align: center; font-size: 12px; color: #9AA1AA; margin-top: 34px; }
 </style>
 </head>
@@ -49,17 +90,18 @@ async function cargar() {
     R = await rpc('regalo_ver', { p_codigo: codigoRegalo });
     if (!R) { $('#vista').innerHTML = '<p class="cargando">No encontramos esta tarjeta de regalo.</p>'; return; }
     aplicarMarca(R.negocio.config); document.title = 'Tarjeta de regalo · ' + R.negocio.nombre;
+    if (R.estado === 'activa' && !store.get('kata-regalo-abierto-' + codigoRegalo)) return sobre();
     pintar();
   } catch (e) { $('#vista').innerHTML = `<p class="cargando">${esc(msg(e))}</p>`; }
 }
 
-function pintar() {
+function pintar(desdeSobre) {
   const activa = R.estado === 'activa';
   const valor = R.tipo === 'servicio' ? esc(R.servicio) : dinero(R.saldo);
   const etiqueta = { usada: 'Ya usada', vencida: 'Vencida', anulada: 'Anulada' }[R.estado];
   $('#vista').innerHTML = `
     <div class="intro"><p>${R.de ? esc(R.de) + ' te regaló' : 'Te regalaron'}</p><h1>Una visita a ${esc(R.negocio.nombre)}</h1></div>
-    <div class="giftcard">${etiqueta ? `<span class="sello-estado">${etiqueta}</span>` : ''}
+    <div class="giftcard${desdeSobre ? ' desde-sobre brilla' : ''}">${etiqueta ? `<span class="sello-estado">${etiqueta}</span>` : ''}
       <div class="neg">${esc(R.negocio.nombre)}</div>
       <div><div class="que">${R.tipo === 'servicio' ? 'Tarjeta de regalo' : (R.saldo < R.monto ? 'Saldo disponible' : 'Tarjeta de regalo por')}</div><div class="valor">${valor}</div></div>
       <div class="pd"><span>Para: ${esc(R.para)}</span>${R.vence ? `<span>Hasta el ${fechaCorta(R.vence)}</span>` : ''}</div>
@@ -91,6 +133,41 @@ async function usar() {
     }, 3000);
   } catch (e) { toast(msg(e), 'mal'); }
 }
+const LAZO = `<svg viewBox="0 0 120 100" aria-hidden="true">
+  <defs><linearGradient id="sat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:color-mix(in srgb, var(--marca) 65%, #fff 35%)"/><stop offset=".55" style="stop-color:var(--marca)"/><stop offset="1" style="stop-color:var(--marca-2)"/></linearGradient></defs>
+  <path d="M55 52 L36 96 L45 91 L50 99 L62 56Z" fill="url(#sat)"/><path d="M65 52 L84 96 L75 91 L70 99 L58 56Z" fill="url(#sat)"/>
+  <path d="M60 46 C44 18 10 14 12 38 C14 58 42 58 60 46Z" fill="url(#sat)"/><path d="M60 46 C76 18 110 14 108 38 C106 58 78 58 60 46Z" fill="url(#sat)"/>
+  <path d="M58 45 C44 30 24 28 22 38 C22 46 40 48 58 45Z" style="fill:var(--marca-2)" opacity=".35"/><path d="M62 45 C76 30 96 28 98 38 C98 46 80 48 62 45Z" style="fill:var(--marca-2)" opacity=".35"/>
+  <rect x="51" y="36" width="18" height="20" rx="6" fill="url(#sat)" style="stroke:var(--marca-2)" stroke-width="1"/></svg>`;
+
+function sobre() {
+  const valor = R.tipo === 'servicio' ? esc(R.servicio) : dinero(R.saldo);
+  const e = document.createElement('div'); e.className = 'escena'; e.id = 'escena';
+  e.innerHTML = `<div class="de"><p>${R.de ? esc(R.de) + ' te envió un regalo' : 'Te enviaron un regalo'}</p><h1>Para ${esc(R.para)}</h1></div>
+    <div class="sobre" role="button" aria-label="Abrir el regalo" tabindex="0">
+      <div class="s-sombra"></div><div class="s-fondo"></div>
+      <div class="carta"><div class="neg">${esc(R.negocio.nombre)}</div><div><div class="que">Tarjeta de regalo</div><div class="valor">${valor}</div></div><div class="pd"><span>Para: ${esc(R.para)}</span></div></div>
+      <div class="s-frente"></div><div class="s-solapa"></div>
+      <div class="cinta-v"></div><div class="cinta-h"></div><div class="lazo">${LAZO}</div>
+    </div>
+    <p class="toca"><i></i>Toca el lazo para abrirlo</p>`;
+  document.body.appendChild(e);
+  $('#vista').innerHTML = '';
+  let abierto = false;
+  const abrir = () => {
+    if (abierto) return; abierto = true;
+    try { navigator.vibrate && navigator.vibrate(15); } catch (er) {}
+    e.classList.add('desata');
+    setTimeout(() => e.classList.add('abre'), 550);
+    setTimeout(() => e.classList.add('sale'), 1250);
+    setTimeout(() => e.classList.add('fin'), 2150);
+    setTimeout(() => { store.set('kata-regalo-abierto-' + codigoRegalo, '1'); pintar(true); e.classList.add('fuera'); try { navigator.vibrate && navigator.vibrate([12, 30, 12]); } catch (er) {} }, 2750);
+    setTimeout(() => e.remove(), 3400);
+  };
+  $('.sobre', e).addEventListener('click', abrir);
+  $('.sobre', e).addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') abrir(); });
+}
+
 function cerrar() { clearInterval(sondeo); const c = $('#capa'); if (c) c.remove(); pintar(); }
 cargar();
 </script>
