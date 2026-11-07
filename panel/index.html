@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261107223952">
+<meta name="kata-version" content="20261107225338">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Panel de recepción</title>
@@ -219,7 +219,7 @@ document.addEventListener('fullscreenchange', () => { if (!document.fullscreenEl
 
 /* ---------- Canjear ---------- */
 function canjear() {
-  $('#cont').innerHTML = `<h2 class="tit">${MODO() === 'cliente' ? 'Canjear' : 'Escanear cliente'}</h2><p class="sub">${MODO() === 'cliente' ? 'Premios, regalos de cumpleaños y tarjetas de regalo se canjean igual: escanea el QR del cliente o escribe su código.' : 'Al cobrar, busca al cliente por su WhatsApp (o escanea el código de su tarjeta). En su ficha le sumas la visita, aplicas su beneficio VIP y le entregas su premio. Las tarjetas de regalo también se escanean aquí.'}</p>
+  $('#cont').innerHTML = `<div id="encab"><h2 class="tit">${MODO() === 'cliente' ? 'Canjear' : 'Escanear cliente'}</h2><p class="sub">${MODO() === 'cliente' ? 'Premios, regalos de cumpleaños y tarjetas de regalo se canjean igual: escanea el QR del cliente o escribe su código.' : 'Al cobrar, busca al cliente por su WhatsApp (o escanea el código de su tarjeta). En su ficha le sumas la visita, aplicas su beneficio VIP y le entregas su premio. Las tarjetas de regalo también se escanean aquí.'}</p></div>
     <div class="grid2" id="buscador"><div class="tarjeta"><div id="lector"></div><p class="nota" id="camnota" style="margin-top:10px">El navegador te va a pedir permiso para usar la cámara.</p>
       <button class="btn claro ancho" id="camBtn" style="margin-top:10px" onclick="iniciarLector()">Abrir cámara</button></div>
     <div>${MODO() !== 'cliente' ? `<div class="tarjeta" style="margin-bottom:16px"><label for="bq">Buscar por WhatsApp o nombre</label><input id="bq" inputmode="search" autocomplete="off" placeholder="Ej. 6123 o Carla">
@@ -228,7 +228,7 @@ function canjear() {
       <button class="btn ancho" style="margin-top:12px" onclick="buscar($('#cod').value)">Buscar</button></div></div></div>
     <div id="res" class="res-solo"></div>`;
   // Cuando aparece un cliente (o una tarjeta de regalo) se oculta todo lo de buscar; «Siguiente cliente» lo vuelve a mostrar.
-  new MutationObserver(() => { const hay = $('#res') && $('#res').innerHTML.trim() !== ''; const b = $('#buscador'); if (!b) return; b.classList.toggle('oculto', hay); if (hay) { detenerLector(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }).observe($('#res'), { childList: true });
+  new MutationObserver(() => { const hay = $('#res') && $('#res').innerHTML.trim() !== ''; const b = $('#buscador'); if (!b) return; b.classList.toggle('oculto', hay); $('#encab').classList.toggle('oculto', hay); if (hay) { detenerLector(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }).observe($('#res'), { childList: true });
   $('#cod').addEventListener('keydown', (e) => { if (e.key === 'Enter') buscar(e.target.value); });
   const bq = $('#bq'); if (!bq) return;
   let t = null;
@@ -326,8 +326,10 @@ async function clientes() {
       ${c.vip ? '<span class="chip" style="background:#23262B;color:#D6B680">VIP</span>' : ''}${c.premios_listos > 0 ? '<span class="chip">Premio listo</span>' : accion ? '' : `<div class="puntos">${Array.from({ length: meta }, (_, i) => `<i class="${i < c.sellos ? 'on' : ''}"></i>`).join('')}</div>`}${accion}</li>`;
   const waTxt = (c, tipo) => {
     const n = c.nombre.split(' ')[0], link = `${BASE}t/?n=${NEG.slug}`;
+    const club = (NEG.config.vip || {}).nombre || 'club';
     const t = tipo === 'cumple'
-      ? `Hola ${n}, feliz cumpleaños de parte de ${NEG.nombre}. Este mes tienes un regalo esperándote en tu tarjeta: ${link}`
+      ? (c.vip ? `Hola ${n}, feliz cumpleaños de parte de ${NEG.nombre}. Como miembro del ${club}, este mes tienes tu regalo de cumpleaños esperándote. ¿Te agendamos?`
+        : `Hola ${n}, feliz cumpleaños de parte de todo el equipo de ${NEG.nombre}. Que tengas un año lleno de bienestar. Te esperamos pronto.`)
       : `Hola ${n}, te extrañamos en ${NEG.nombre}. Tu tarjeta va en ${c.sellos} de ${meta} sellos. ¿Te agendamos esta semana?`;
     return `<a class="wa redondo" aria-label="Escribir por WhatsApp" target="_blank" rel="noopener" href="https://wa.me/${waNum(c.tel)}?text=${encodeURIComponent(t)}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2a9.7 9.7 0 0 0-8.4 14.6L2.3 21.8l5.1-1.3A9.7 9.7 0 1 0 12 2.2zm0 17.7c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 19.9zm4.4-6c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8.9c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1l-.5-.3z"/></svg></a>`;
   };
