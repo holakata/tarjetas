@@ -60,6 +60,8 @@ function aplicarMarca(cfg) {
   if (cfg.color) r.setProperty('--marca', cfg.color);
   if (cfg.color2) r.setProperty('--marca-2', cfg.color2);
   if (cfg.fondo) r.setProperty('--fondo-marca', cfg.fondo);
+  r.setProperty('--acento', cfg.color3 || cfg.color || '#2B86C2');
+  const tc = document.querySelector('meta[name="theme-color"][data-marca]'); if (tc && cfg.color2) tc.content = cfg.color2;
 }
 
 function qrSVG(texto, px = 240) {

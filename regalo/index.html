@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261107213330">
+<meta name="kata-version" content="20261107213524">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Tarjeta de regalo</title>
@@ -10,6 +10,7 @@
 <style>
   .app { max-width: 460px; margin: 0 auto; padding: 26px 18px 60px; }
   .intro { text-align: center; margin-bottom: 22px; }
+  .logo-r { width: 64px; height: 64px; object-fit: contain; display: block; margin: 0 auto 8px; }
   .intro p { color: var(--tinta-2); font-size: 15px; }
   .intro h1 { font-family: "Gloock", serif; font-weight: 400; font-size: 30px; line-height: 1.1; margin-top: 4px; }
   .giftcard { position: relative; aspect-ratio: 1.58; border-radius: 24px; overflow: hidden; color: #fff; padding: 22px; display: flex; flex-direction: column; justify-content: space-between;
@@ -101,7 +102,7 @@ function pintar(desdeSobre) {
   const valor = R.tipo === 'servicio' ? esc(R.servicio) : dinero(R.saldo);
   const etiqueta = { usada: 'Ya usada', vencida: 'Vencida', anulada: 'Anulada' }[R.estado];
   $('#vista').innerHTML = `
-    <div class="intro"><p>${R.de ? esc(R.de) + ' te regaló' : 'Te regalaron'}</p><h1>Una visita a ${esc(R.negocio.nombre)}</h1></div>
+    <div class="intro">${R.negocio.config.logo ? `<img class="logo-r" src="../${esc(R.negocio.config.logo)}" alt="">` : ''}<p>${R.de ? esc(R.de) + ' te regaló' : 'Te regalaron'}</p><h1>Una visita a ${esc(R.negocio.nombre)}</h1></div>
     <div class="giftcard${desdeSobre ? ' desde-sobre brilla' : ''}">${etiqueta ? `<span class="sello-estado">${etiqueta}</span>` : ''}
       <div class="neg">${esc(R.negocio.nombre)}</div>
       <div><div class="que">${R.tipo === 'servicio' ? 'Tarjeta de regalo' : (R.saldo < R.monto ? 'Saldo disponible' : 'Tarjeta de regalo por')}</div><div class="valor">${valor}</div></div>

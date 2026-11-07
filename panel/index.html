@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261107213330">
+<meta name="kata-version" content="20261107213524">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Panel de recepción</title>
@@ -14,6 +14,7 @@
 
   .barra { position: sticky; top: 0; z-index: 10; background: rgba(246,244,240,.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--linea); }
   .barra-in { max-width: 1100px; margin: 0 auto; padding: 12px 18px; display: flex; align-items: center; gap: 12px; }
+  .mono.con-logo { background: #fff; border: 1px solid var(--linea); padding: 4px; } .mono img { width: 100%; height: 100%; object-fit: contain; }
   .mono { width: 40px; height: 40px; border-radius: 12px; background: var(--marca); color: #fff; display: grid; place-items: center; font-family: "Gloock", serif; font-size: 20px; flex: none; }
   .barra h1 { font-size: 16px; font-weight: 700; line-height: 1.1; }
   .barra p { font-size: 12px; color: var(--tinta-2); }
@@ -141,7 +142,7 @@ function login(error = '') {
 }
 
 function marco() {
-  $('#app').innerHTML = `<header class="barra"><div class="barra-in"><div class="mono">${esc(NEG.nombre.trim()[0])}</div>
+  $('#app').innerHTML = `<header class="barra"><div class="barra-in"><div class="mono${NEG.config.logo ? ' con-logo' : ''}">${NEG.config.logo ? `<img src="../${esc(NEG.config.logo)}" alt="">` : esc(NEG.nombre.trim()[0])}</div>
     <div><h1>${esc(NEG.nombre)}</h1><p>Panel de recepción</p></div><button class="salir" onclick="salir()">Salir</button></div>
     <nav class="tabs">
       ${MODO() === 'recepcion' ? '<button class="tab" data-t="canjear">Escanear cliente</button><button class="tab" data-t="mostrador">QR para crear tarjeta</button>'
