@@ -67,7 +67,7 @@ function pintar() {
     ${R.mensaje ? `<div class="mensaje">“${esc(R.mensaje)}”${R.de ? `<span>${esc(R.de)}</span>` : ''}</div>` : ''}
     <div class="datos">
       <div><span>Cómo usarla</span><span>Muéstrala en recepción</span></div>
-      ${R.negocio.config.whatsapp ? `<div><span>Para agendar</span><a href="https://wa.me/${esc(R.negocio.config.whatsapp)}" style="color:var(--marca-2);font-weight:600">WhatsApp</a></div>` : ''}
+      ${R.negocio.config.whatsapp ? `<div><span>Para agendar</span><a href="https://wa.me/${(() => { const t = String(R.negocio.config.whatsapp).replace(/\D/g, ''); return t.length === 8 ? '507' + t : t; })()}?text=${encodeURIComponent('Hola, tengo una tarjeta de regalo y quisiera agendar una cita.')}" target="_blank" rel="noopener" style="color:var(--marca-2);font-weight:600">WhatsApp</a></div>` : ''}
       ${R.tipo === 'monto' && R.usos.length ? `<div><span>Usado hasta hoy</span><span>${dinero(R.monto - R.saldo)}</span></div>` : ''}
     </div>
     <div class="acc">${activa ? '<button class="btn ancho" onclick="usar()">Usar en recepción</button>' : ''}</div>`;

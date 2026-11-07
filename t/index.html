@@ -98,6 +98,19 @@
   .aviso.brilla .ic { animation: latido 2.4s ease-in-out infinite; }
   @keyframes latido { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 
+  .agendar, .club-inv { display: flex; align-items: center; gap: 14px; width: 100%; margin-top: 12px; padding: 14px 16px; border-radius: 20px; border: 0; text-align: left; font: inherit; cursor: pointer; text-decoration: none; transition: transform .15s; }
+  .agendar:active, .club-inv:active { transform: scale(.98); }
+  .agendar { background: var(--marca-2); color: #fff; box-shadow: 0 10px 24px color-mix(in srgb, var(--marca-2) 30%, transparent); }
+  .agendar .ic { width: 42px; height: 42px; border-radius: 50%; background: #25D366; color: #fff; display: grid; place-items: center; flex: none; }
+  .agendar .ic svg { width: 23px; height: 23px; }
+  .agendar b, .club-inv b { display: block; font-size: 16px; } .agendar span span { font-size: 13px; opacity: .8; }
+  .agendar .fl, .club-inv .fl { margin-left: auto; display: grid; opacity: .7; }
+  .club-inv { background: linear-gradient(155deg, #2A2C31, #111214); color: #F4EBDD; }
+  .club-inv .ic { width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(214,182,128,.5); color: #D6B680; display: grid; place-items: center; flex: none; }
+  .club-inv .ic svg { width: 21px; height: 21px; } .club-inv span span { font-size: 13px; color: #D6B680; }
+  .guardar-l { text-align: center; margin-top: 18px; }
+  .guardar-l .enlace { display: inline-flex; align-items: center; gap: 6px; color: var(--tinta-2); font-size: 14px; }
+  .guardar-l svg { width: 16px; height: 16px; }
   .acciones-r { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
   .acc { background: #fff; border: 0; border-radius: 20px; padding: 14px 6px 12px; box-shadow: var(--sombra); display: flex; flex-direction: column; align-items: center; gap: 8px; font: inherit; font-size: 13px; font-weight: 600; color: var(--tinta); cursor: pointer; transition: transform .15s; }
   .acc:active { transform: scale(.95); }
@@ -165,6 +178,7 @@ const I = {
   cel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="3"/><path d="M12 8v6M9 11.5l3 3 3-3"/></svg>',
   giro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 9M20 4v5h-5M20 12a8 8 0 0 1-13.7 5.6L4 15M4 20v-5h5"/></svg>',
   qr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="6" height="6" rx="1"/><rect x="14.5" y="3.5" width="6" height="6" rx="1"/><rect x="3.5" y="14.5" width="6" height="6" rx="1"/><path d="M14.5 14.5h2v2M20.5 14.5v6h-6v-3"/></svg>',
+  wa: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2a9.7 9.7 0 0 0-8.4 14.6L2.3 21.8l5.1-1.3A9.7 9.7 0 1 0 12 2.2zm0 17.7c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 19.9zm4.4-6c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8.9c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1l-.5-.3z"/></svg>',
   fl: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
 };
 
@@ -233,6 +247,7 @@ function pintar(animar = false) {
   const frase = E.premios_listos > 0 ? `Completaste tu tarjeta. <b>${esc(E.premio || 'Tu premio')}</b> te espera.`
     : `${E.hoy_sellado ? 'Visita de hoy sumada. ' : ''}Te ${faltan === 1 ? 'falta <b>1 visita</b>' : `faltan <b>${faltan} visitas</b>`} para tu ${esc((E.premio || 'premio').toLowerCase())}.`;
 
+  const wa = (() => { const t = String(NEG.config.whatsapp || '').replace(/\D/g, ''); return t.length === 8 ? '507' + t : t; })();
   $('#vista').innerHTML = `
     <p class="hola">Hola, <b>${esc(E.nombre.split(' ')[0])}</b></p>
     <div class="wallet${pVip ? '' : ' uno'}" id="wallet">${pSellos}${pVip}</div>
@@ -240,11 +255,9 @@ function pintar(animar = false) {
     <div class="cuerpo">
       <div class="progreso"><p>${frase}</p><div class="barra"><i id="bar"></i></div></div>
       ${avisos.length ? `<div class="avisos">${avisos.join('')}</div>` : ''}
-      <div class="acciones-r"${V ? '' : ' style="grid-template-columns:repeat(2,1fr)"'}>
-        <button class="acc" onclick="hojaVisitas()"><span class="ic">${I.reloj}</span>Mis visitas</button>
-        ${V ? `<button class="acc dorado" onclick="hojaClub()"><span class="ic">${I.corona}</span>${V.miembro ? 'Beneficios' : 'Club'}</button>` : ''}
-        <button class="acc" onclick="hojaGuardar()"><span class="ic">${I.cel}</span>Guardar</button>
-      </div>
+      ${wa ? `<a class="agendar" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent('Hola, soy ' + E.nombre + '. Quisiera agendar una cita.')}"><span class="ic">${I.wa}</span><span><b>Agendar cita</b><span>Escríbenos por WhatsApp</span></span><span class="fl">${I.fl}</span></a>` : ''}
+      ${V && !V.miembro ? `<button class="club-inv" onclick="hojaClub()"><span class="ic">${I.corona}</span><span><b>${esc(V.nombre)}</b><span>${+V.cuota > 0 ? dinero(V.cuota) + ' al ' + esc(V.periodo || 'mes') + ' · ' : ''}Ver beneficios</span></span><span class="fl">${I.fl}</span></button>` : ''}
+      <p class="guardar-l"><button class="enlace" onclick="hojaGuardar()">${I.cel} Guardar en mi celular</button></p>
     </div>`;
   requestAnimationFrame(() => setTimeout(() => { const b = $('#bar'); if (b) b.style.width = pct + '%'; }, 120));
   const w = $('#wallet');
@@ -300,11 +313,6 @@ function hoja(html) {
 function cerrarHoja(ya) { clearInterval(sondeo); const v = $('.velo'); if (!v) return; if (ya) return v.remove(); v.classList.remove('ver'); setTimeout(() => v.remove(), 280); }
 const btnCerrar = (t = 'Listo') => `<button class="btn claro ancho" style="margin-top:18px" onclick="cerrarHoja()">${t}</button>`;
 
-function hojaVisitas() {
-  const E = ESTADO;
-  hoja(`<h3>Tus visitas</h3><p class="nota">${E.visitas.length ? 'Las últimas veces que viniste.' : 'Aquí verás cada visita que sumes.'}</p>
-    <ul class="hist" style="margin-top:10px">${E.visitas.length ? E.visitas.map((v) => `<li><span>${fechaCorta(v.fecha)}</span><span>${v.sellos > 1 ? '+2 sellos' : '+1 sello'}</span></li>`).join('') : ''}</ul>${btnCerrar()}`);
-}
 function hojaClub() {
   const V = ESTADO.vip, ben = `<ul class="lista-b" style="margin-top:10px">${(V.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
   if (V.miembro) return hoja(`<h3>${esc(V.nombre)}</h3><p class="nota">${V.hasta ? 'Tu membresía está activa hasta el ' + fechaCorta(V.hasta) + '.' : 'Tu membresía está activa.'}</p>${ben}
