@@ -132,6 +132,7 @@ function marco() {
       <button class="tab" data-t="canjear">Canjear</button>
       <button class="tab" data-t="clientes">Clientes</button>
       <button class="tab" data-t="regalos">Tarjetas de regalo</button>
+      <button class="tab" data-t="vip">Club VIP</button>
     </nav></header><main class="cont" id="cont"></main>`;
   $$('.tab').forEach((b) => (b.onclick = () => ir(b.dataset.t)));
 }
@@ -143,7 +144,7 @@ async function ir(t) {
   $$('.tab').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
   clearTimeout(tTimer); clearInterval(cTimer); await detenerLector();
   document.body.classList.remove('full');
-  ({ mostrador, canjear, clientes, regalos })[t]();
+  ({ mostrador, canjear, clientes, regalos, vip })[t]();
 }
 
 /* ---------- QR del mostrador ---------- */
@@ -201,16 +202,19 @@ async function buscar(cod) {
     if (k.tipo === 'regalo') {
       titulo = 'Para ' + k.para; det = (k.de ? 'De ' + k.de + ' · ' : '') + (k.regalo_tipo === 'servicio' ? k.servicio : 'Saldo ' + dinero(k.saldo));
       if (k.regalo_tipo === 'monto') extra = `<div class="campo"><label for="mto">¿Cuánto se consumió? (máximo ${dinero(k.saldo)})</label><input id="mto" inputmode="decimal" placeholder="0.00"></div>`;
+    } else if (k.tipo === 'vip') {
+      titulo = k.cliente; det = (k.hasta ? 'Miembro activo hasta el ' + fechaCorta(k.hasta) : 'Miembro activo') + ' · ' + telBonito(k.tel);
+      extra = `<ul style="margin:0 0 16px 18px;color:var(--tinta-2)">${(k.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
     } else { titulo = k.cliente; det = k.detalle + ' · ' + telBonito(k.tel); }
-    const et = { premio: 'Premio de sellos', cumple: 'Regalo de cumpleaños', regalo: 'Tarjeta de regalo' }[k.tipo];
+    const et = { premio: 'Premio de sellos', cumple: 'Regalo de cumpleaños', regalo: 'Tarjeta de regalo', vip: (NEG.config.vip && NEG.config.vip.nombre) || 'Club VIP' }[k.tipo];
     $('#res').innerHTML = `<div class="tarjeta resultado"><span class="tipo">${et}</span><h3>${esc(titulo)}</h3><p class="det">${esc(det)}</p>${extra}
-      <button class="btn ancho" id="conf">Confirmar entrega</button><button class="enlace" style="width:100%;margin-top:6px" onclick="$('#res').innerHTML='';$('#cod').value=''">Cancelar</button></div>`;
+      <button class="btn ancho" id="conf">${k.tipo === 'vip' ? 'Aplicar beneficio' : 'Confirmar entrega'}</button><button class="enlace" style="width:100%;margin-top:6px" onclick="$('#res').innerHTML='';$('#cod').value=''">Cancelar</button></div>`;
     $('#conf').onclick = async () => {
       $('#conf').disabled = true;
       try {
         const monto = $('#mto') ? parseFloat(($('#mto').value || '').replace(',', '.')) : null;
         await rpc('canje_confirmar', { p_codigo: cod, p_monto: monto });
-        $('#res').innerHTML = `<div class="tarjeta exito"><div class="circ">${CHECK}</div><h3>Entregado</h3><p class="nota">Quedó marcado como usado. El cliente lo ve en su celular.</p>
+        $('#res').innerHTML = `<div class="tarjeta exito"><div class="circ">${CHECK}</div><h3>Listo</h3><p class="nota">Quedó registrado. El cliente lo ve en su celular.</p>
           <button class="btn ancho" style="margin-top:16px" onclick="$('#res').innerHTML='';$('#cod').value='';iniciarLector()">Canjear otro</button></div>`;
         $('#cod').value = '';
       } catch (e) { toast(msg(e), 'mal'); $('#conf').disabled = false; }
@@ -227,7 +231,7 @@ async function clientes() {
   const lejos = DATOS.lista.filter((c) => c.dias_sin_venir !== null && c.dias_sin_venir >= 30);
   const fila = (c, accion = '') => `<li><div class="av">${esc(c.nombre.trim()[0])}</div><div class="info"><b>${esc(c.nombre)}</b>
       <span>${telBonito(c.tel)} · ${c.ultima ? 'última visita ' + fechaCorta(c.ultima) : 'sin visitas'}</span></div>
-      ${c.premios_listos > 0 ? '<span class="chip">Premio listo</span>' : `<div class="puntos">${Array.from({ length: meta }, (_, i) => `<i class="${i < c.sellos ? 'on' : ''}"></i>`).join('')}</div>`}${accion}</li>`;
+      ${c.vip ? '<span class="chip" style="background:#23262B;color:#D6B680">VIP</span>' : ''}${c.premios_listos > 0 ? '<span class="chip">Premio listo</span>' : `<div class="puntos">${Array.from({ length: meta }, (_, i) => `<i class="${i < c.sellos ? 'on' : ''}"></i>`).join('')}</div>`}${accion}</li>`;
   const waTxt = (c, tipo) => {
     const n = c.nombre.split(' ')[0], link = `${BASE}t/?n=${NEG.slug}`;
     const t = tipo === 'cumple'
@@ -236,7 +240,7 @@ async function clientes() {
     return `<a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(c.tel)}?text=${encodeURIComponent(t)}">WhatsApp</a>`;
   };
   $('#cont').innerHTML = `<div class="stats"><div class="stat"><b>${DATOS.clientes}</b><span>clientes con tarjeta</span></div>
-      <div class="stat"><b>${DATOS.sellos_mes}</b><span>sellos este mes</span></div><div class="stat"><b>${DATOS.premios_mes}</b><span>premios entregados</span></div></div>
+      <div class="stat"><b>${DATOS.sellos_mes}</b><span>sellos este mes</span></div><div class="stat"><b>${DATOS.premios_mes}</b><span>premios entregados este mes</span></div></div>
     ${cumple.length ? `<div class="tarjeta seccion"><h3>Cumpleaños de ${MESES[mes - 1]}</h3><ul class="lista">${cumple.map((c) => fila(c, waTxt(c, 'cumple'))).join('')}</ul></div>` : ''}
     ${lejos.length ? `<div class="tarjeta seccion"><h3>Hace más de 30 días que no vienen</h3><ul class="lista">${lejos.map((c) => fila(c, waTxt(c, 'lejos'))).join('')}</ul></div>` : ''}
     <div class="tarjeta"><h3 style="font-size:16px;margin-bottom:10px">Todos los clientes</h3><input id="bus" placeholder="Buscar por nombre o WhatsApp" style="margin-bottom:6px">
@@ -284,6 +288,39 @@ async function regalos() {
   };
   listaRegalos();
 }
+/* ---------- Club VIP ---------- */
+async function vip() {
+  const V = NEG.config.vip || {};
+  $('#cont').innerHTML = `<div class="grid2"><div class="tarjeta"><h2 class="tit">${esc(V.nombre || 'Club VIP')}</h2>
+      <p class="sub">${+V.cuota > 0 ? dinero(V.cuota) + ' al ' + esc(V.periodo || 'mes') + '. ' : ''}Cuando un cliente pague, actívalo aquí con su WhatsApp. Lo ve al momento en su tarjeta.</p>
+      <form id="f" novalidate><div class="campo"><label for="vt">WhatsApp del cliente</label><input id="vt" inputmode="tel" placeholder="6000-0000"></div>
+      <div class="campo"><label for="vm">Tiempo</label><select id="vm"><option value="1">1 mes</option><option value="3">3 meses</option><option value="6">6 meses</option><option value="12">1 año</option></select></div>
+      <p class="error" id="err"></p><button class="btn ancho" id="go">Activar o renovar</button></form>
+      <p class="nota" style="margin-top:14px">Beneficios: ${(V.beneficios || []).map(esc).join(' · ')}</p></div>
+    <div class="tarjeta"><h2 class="tit" style="font-size:18px">Miembros</h2><ul class="lista" id="mbs"><li class="vacio">Cargando…</li></ul></div></div>`;
+  $('#f').onsubmit = async (ev) => {
+    ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
+    try { const r = await rpc('vip_activar', { p_tel: $('#vt').value, p_meses: +$('#vm').value }); toast(`${r.nombre}: activa hasta el ${fechaCorta(r.hasta)}`, 'ok'); $('#f').reset(); listaVip(); }
+    catch (e) { $('#err').textContent = msg(e); }
+    $('#go').disabled = false;
+  };
+  listaVip();
+}
+async function listaVip() {
+  try {
+    const L = await rpc('vip_lista'); const V = NEG.config.vip || {};
+    $('#mbs').innerHTML = L.length ? L.map((m) => {
+      const pronto = m.activo && m.dias !== null && m.dias <= 7;
+      const txt = m.activo ? `Hola ${m.nombre.split(' ')[0]}, tu membresía del ${V.nombre || 'club'} vence el ${fechaCorta(m.hasta)}. ¿Te la renovamos en tu próxima visita?`
+        : `Hola ${m.nombre.split(' ')[0]}, extrañamos verte en el ${V.nombre || 'club'}. Si quieres retomar tu membresía, te la activamos en tu próxima visita.`;
+      return `<li><div class="av">${esc(m.nombre.trim()[0])}</div><div class="info"><b>${esc(m.nombre)}</b>
+        <span>${m.activo ? (m.hasta ? 'hasta el ' + fechaCorta(m.hasta) : 'sin vencimiento') : 'venció el ' + fechaCorta(m.hasta)} · ${m.usos} ${m.usos === 1 ? 'visita' : 'visitas'} con beneficio</span></div>
+        <span class="estado ${m.activo ? 'activa' : 'usada'}">${m.activo ? (pronto ? `Vence en ${m.dias} d` : 'Activa') : 'Vencida'}</span>
+        ${pronto || !m.activo ? `<a class="wa" style="min-height:36px;padding:0 10px" target="_blank" rel="noopener" href="https://wa.me/${waNum(m.tel)}?text=${encodeURIComponent(txt)}">WhatsApp</a>` : ''}</li>`;
+    }).join('') : '<li class="vacio">Todavía no hay miembros.</li>';
+  } catch (e) { $('#mbs').innerHTML = `<li class="vacio">${esc(msg(e))}</li>`; }
+}
+
 function waNum(t) { t = String(t || '').replace(/\D/g, ''); return t.length <= 8 ? '507' + t : t; }
 function textoRegalo(para, de, link) {
   return `Hola ${para}, ${de ? de + ' te regaló' : 'tienes'} una tarjeta de regalo de ${NEG.nombre}. Ábrela aquí: ${link}`;

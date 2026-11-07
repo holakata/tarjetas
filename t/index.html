@@ -16,7 +16,7 @@
   .tarjeta { position: relative; border-radius: 26px; overflow: hidden; color: #fff; background: var(--marca-2); box-shadow: 0 2px 4px rgba(18,58,94,.12), 0 18px 40px rgba(18,58,94,.22); }
   .tarjeta .arriba { padding: 22px 22px 18px; background: linear-gradient(160deg, var(--marca) 0%, var(--marca-2) 100%); }
   .tarjeta .fila-t { display: flex; justify-content: space-between; align-items: flex-start; }
-  .tarjeta .lbl { font-size: 11px; letter-spacing: .08em; opacity: .75; }
+  .tarjeta .lbl { font-size: 13px; opacity: .75; }
   .tarjeta .nom { font-size: 20px; font-weight: 600; margin-top: 2px; }
   .tarjeta .cuenta { text-align: right; }
   .tarjeta .cuenta b { font-family: "Gloock", serif; font-weight: 400; font-size: 34px; line-height: 1; }
@@ -57,6 +57,17 @@
   .formu > p { color: var(--tinta-2); margin-bottom: 20px; }
   .aviso-sello { background: var(--fondo-marca); border-radius: 14px; padding: 12px 14px; font-size: 14px; margin-bottom: 18px; color: var(--marca-2); font-weight: 600; }
   .pin { letter-spacing: .5em; text-align: center; font-size: 22px; font-weight: 700; }
+  .vipcard { position: relative; border-radius: 22px; padding: 20px 22px; margin-top: 16px; color: #F4EBDD; background: linear-gradient(155deg, #23262B 0%, #121315 100%); box-shadow: 0 14px 34px rgba(0,0,0,.25); overflow: hidden; }
+  .vipcard::after { content: ""; position: absolute; right: -40px; top: -40px; width: 160px; height: 160px; border-radius: 50%; border: 1.5px solid rgba(214,182,128,.35); }
+  .vipcard .lbl { font-size: 13px; color: #D6B680; }
+  .vipcard h3 { font-family: "Gloock", serif; font-weight: 400; font-size: 26px; margin: 2px 0 2px; }
+  .vipcard .vig { font-size: 14px; opacity: .8; }
+  .vipcard ul, .club ul { list-style: none; margin: 14px 0 0; }
+  .vipcard li, .club li { padding: 7px 0 7px 22px; position: relative; font-size: 15px; }
+  .vipcard li::before, .club li::before { content: ""; position: absolute; left: 2px; top: 14px; width: 8px; height: 8px; border-radius: 50%; background: #D6B680; }
+  .vipcard .btn { background: #D6B680; color: #17181B; margin-top: 16px; }
+  .club .precio { font-family: "Gloock", serif; font-size: 26px; margin-top: 12px; }
+  .club .precio span { font-family: "Inst", sans-serif; font-size: 14px; color: var(--tinta-2); }
   .kata { text-align: center; font-size: 12px; color: #9AA1AA; margin-top: 34px; }
 </style>
 </head>
@@ -128,15 +139,30 @@ function tarjeta(animar = false) {
   const hist = E.visitas.length ? E.visitas.map((v) => `<li><span>${fechaCorta(v.fecha)}</span><span>${v.sellos > 1 ? '+2 sellos' : '+1 sello'}</span></li>`).join('') : '<li><span>Todavía no tienes visitas.</span><span></span></li>';
   $('#vista').innerHTML = `
     <section class="tarjeta">
-      <div class="arriba"><div class="fila-t"><div><div class="lbl">CLIENTE</div><div class="nom">${esc(E.nombre)}</div></div>
+      <div class="arriba"><div class="fila-t"><div><div class="lbl">Cliente</div><div class="nom">${esc(E.nombre)}</div></div>
       <div class="cuenta"><b>${llenos}</b><span> / ${meta}</span></div></div></div>
       <div class="sellos${meta > 6 ? ' m8' : ''}">${celdas}</div>
       <div class="pie-t"><span>Premio: ${esc(E.premio || '')}</span></div>
     </section>
     ${extra}
+    ${vipHTML(E)}
     ${E.premios_listos > 0 ? '' : `<p class="faltan">${E.hoy_sellado ? 'Ya sumaste tu sello de hoy. ' : ''}Te ${faltan === 1 ? 'falta <b>1 visita</b>' : `faltan <b>${faltan} visitas</b>`} para tu premio.</p>`}
     <section class="bloque"><h2>Tus visitas</h2><ul class="hist">${hist}</ul></section>
     <section class="bloque"><h2>¿Cómo sumo un sello?</h2><p class="nota">En cada visita, escanea con la cámara el QR que está en recepción. Se suma uno por día.</p></section>`;
+}
+
+function vipHTML(E) {
+  const v = E.vip; if (!v) return '';
+  const ben = (v.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('');
+  if (v.miembro) return `<section class="vipcard"><div class="lbl">Miembro</div><h3>${esc(v.nombre)}</h3>
+    <div class="vig">${v.hasta ? 'Activa hasta el ' + fechaCorta(v.hasta) : 'Membresía activa'}</div><ul>${ben}</ul>
+    <button class="btn ancho" onclick="pedir('vip')">Mostrar en recepción</button></section>`;
+  const gratis = !(+v.cuota > 0);
+  return `<section class="bloque club"><h2>${esc(v.nombre)}</h2><p class="nota">${v.vencida ? 'Tu membresía venció. Renuévala en recepción y sigue con tus beneficios.' : 'Beneficios para los clientes de siempre.'}</p><ul>${ben}</ul>
+    ${gratis ? '<button class="btn ancho" style="margin-top:14px" onclick="unirse()">Unirme al club</button>' : `<div class="precio">${dinero(v.cuota)} <span>al ${esc(v.periodo || 'mes')}</span></div><p class="nota" style="margin-top:6px">Pídelo en recepción y lo activan en tu tarjeta.</p>`}</section>`;
+}
+async function unirse() {
+  try { ESTADO = await rpc('vip_unirse', { p_key: store.get(CLAVE) }); tarjeta(); toast('Ya eres parte del club.', 'ok'); } catch (e) { toast(msg(e), 'mal'); }
 }
 
 async function pedir(tipo) {
@@ -149,13 +175,14 @@ async function pedir(tipo) {
 
 function mostrarCanje(codigo, tipo) {
   const capa = document.createElement('div'); capa.className = 'canje'; capa.id = 'capa';
-  capa.innerHTML = `<div class="hoja"><h3>${tipo === 'cumple' ? 'Tu regalo de cumpleaños' : 'Tu premio'}</h3>
+  capa.innerHTML = `<div class="hoja"><h3>${{ cumple: 'Tu regalo de cumpleaños', vip: ESTADO.vip ? ESTADO.vip.nombre : 'Club', premio: 'Tu premio' }[tipo]}</h3>
     <p class="nota">Muestra esta pantalla en recepción.</p>
     <div class="qr">${qrSVG(codigo, 220)}</div><div class="codigo">${codigo}</div>
     <p class="nota">Si no lo pueden escanear, díctales el código.</p>
     <button class="btn claro ancho" style="margin-top:18px" onclick="cerrarCanje()">Cerrar</button></div>`;
   capa.addEventListener('click', (ev) => { if (ev.target === capa) cerrarCanje(); });
   document.body.appendChild(capa);
+  if (tipo === 'vip') return;
   const antes = { p: ESTADO.premios_listos, c: !!ESTADO.cumple_regalo };
   clearInterval(sondeo);
   sondeo = setInterval(async () => {
