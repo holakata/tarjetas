@@ -1,6 +1,6 @@
 {
   "name": "Jazmin Center · Mi tarjeta",
-  "short_name": "Jazmín",
+  "short_name": "Jazmin",
   "start_url": "/tarjetas/t/?n=jazmin",
   "scope": "/tarjetas/t/",
   "display": "browser",
