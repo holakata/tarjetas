@@ -68,6 +68,8 @@
   .vipcard .btn { background: #D6B680; color: #17181B; margin-top: 16px; }
   .club .precio { font-family: "Gloock", serif; font-size: 26px; margin-top: 12px; }
   .club .precio span { font-family: "Inst", sans-serif; font-size: 14px; color: var(--tinta-2); }
+  .miqr { text-align: center; }
+  .miqr .qr { width: 200px; margin: 14px auto 8px; } .miqr .qr svg { width: 100%; height: auto; display: block; }
   .kata { text-align: center; font-size: 12px; color: #9AA1AA; margin-top: 34px; }
 </style>
 </head>
@@ -85,7 +87,10 @@
 const slug = params.get('n') || 'jazmin';
 const tokenQR = params.get('q');
 const CLAVE = 'kata-tarjeta-' + slug;
-let NEG = null, ESTADO = null, sondeo = null;
+let NEG = null, ESTADO = null, sondeo = null, qrTimer = null, vigia = null;
+const MODO = () => (NEG && NEG.config.modo) || 'cliente';
+const conBotones = () => MODO() !== 'recepcion';
+const conMiQR = () => MODO() !== 'cliente';
 
 const CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.2L19 7"/></svg>';
 
@@ -118,6 +123,7 @@ async function sumar(key) {
     tarjeta(true);
     if (r.premio_nuevo) toast('Completaste tu tarjeta. Tu premio está listo.', 'ok');
     else toast(r.sumados > 1 ? 'Hoy tu visita vale doble: +2 sellos' : 'Sello agregado. Gracias por volver.', 'ok');
+    if (ESTADO.vip && ESTADO.vip.miembro) mostrarVipPago();
   } catch (e) { limpiarURL(); tarjeta(); toast(msg(e), e.code === 'hoy' ? '' : 'mal'); }
 }
 
@@ -134,8 +140,10 @@ function tarjeta(animar = false) {
   }
   const faltan = meta - E.sellos;
   let extra = '';
-  if (E.premios_listos > 0) extra += `<section class="bloque premio-listo"><h2>Tu premio está listo</h2><p>${esc(E.premio || 'Tu premio')}. Tócalo cuando estés en recepción.</p><button class="btn ancho" onclick="pedir('premio')">Usar mi premio</button></section>`;
-  if (E.cumple_regalo) extra += `<section class="bloque premio-listo"><h2>Feliz cumpleaños, ${esc(E.nombre.split(' ')[0])}</h2><p>${esc(E.cumple_regalo)}. Es tuyo durante todo este mes.</p><button class="btn ancho" onclick="pedir('cumple')">Usar mi regalo</button></section>`;
+  const cb = conBotones();
+  if (E.premios_listos > 0) extra += `<section class="bloque premio-listo"><h2>Tu premio está listo</h2><p>${esc(E.premio || 'Tu premio')}. ${cb ? 'Tócalo cuando estés en recepción.' : 'Te lo entregan en recepción cuando muestres tu código.'}</p>${cb ? `<button class="btn ancho" onclick="pedir('premio')">Usar mi premio</button>` : ''}</section>`;
+  if (E.cumple_regalo) extra += `<section class="bloque premio-listo"><h2>Feliz cumpleaños, ${esc(E.nombre.split(' ')[0])}</h2><p>${esc(E.cumple_regalo)}. Es tuyo durante todo este mes${cb ? '.' : '; pídelo en recepción.'}</p>${cb ? `<button class="btn ancho" onclick="pedir('cumple')">Usar mi regalo</button>` : ''}</section>`;
+  const miqr = conMiQR() ? `<section class="bloque miqr"><h2>Tu código para recepción</h2><p class="nota">Al pagar, muéstralo en recepción. Ahí te suman la visita${E.vip ? ' y aplican tus beneficios' : ''}.</p><div class="qr" id="miqr"><p class="nota">Cargando…</p></div><div class="codigo" id="micod"></div></section>` : '';
   const hist = E.visitas.length ? E.visitas.map((v) => `<li><span>${fechaCorta(v.fecha)}</span><span>${v.sellos > 1 ? '+2 sellos' : '+1 sello'}</span></li>`).join('') : '<li><span>Todavía no tienes visitas.</span><span></span></li>';
   $('#vista').innerHTML = `
     <section class="tarjeta">
@@ -144,11 +152,53 @@ function tarjeta(animar = false) {
       <div class="sellos${meta > 6 ? ' m8' : ''}">${celdas}</div>
       <div class="pie-t"><span>Premio: ${esc(E.premio || '')}</span></div>
     </section>
+    ${miqr}
     ${extra}
     ${vipHTML(E)}
     ${E.premios_listos > 0 ? '' : `<p class="faltan">${E.hoy_sellado ? 'Ya sumaste tu sello de hoy. ' : ''}Te ${faltan === 1 ? 'falta <b>1 visita</b>' : `faltan <b>${faltan} visitas</b>`} para tu premio.</p>`}
     <section class="bloque"><h2>Tus visitas</h2><ul class="hist">${hist}</ul></section>
-    <section class="bloque"><h2>¿Cómo sumo un sello?</h2><p class="nota">En cada visita, escanea con la cámara el QR que está en recepción. Se suma uno por día.</p></section>`;
+    <section class="bloque"><h2>¿Cómo sumo un sello?</h2><p class="nota">${MODO() === 'recepcion' ? 'En cada visita, al pagar, muestra tu código en recepción y ellos te suman el sello.' : MODO() === 'ambos' ? 'En cada visita, escanea el QR de recepción o muéstrales tu código al pagar. Se suma uno por día.' : 'En cada visita, escanea con la cámara el QR que está en recepción. Se suma uno por día.'}</p></section>`;
+  if (conMiQR()) { cargarQR(); vigilar(); }
+}
+
+async function cargarQR() {
+  clearTimeout(qrTimer);
+  try {
+    const r = await rpc('cliente_qr', { p_key: store.get(CLAVE) });
+    const box = $('#miqr'); if (!box) return;
+    box.innerHTML = qrSVG(r.codigo, 220); $('#micod').textContent = r.codigo;
+    const ms = Math.max(30000, new Date(r.expira) - Date.now() - 55000);
+    qrTimer = setTimeout(cargarQR, ms);
+  } catch (e) { const box = $('#miqr'); if (box) box.innerHTML = `<p class="nota">${esc(msg(e))}</p>`; qrTimer = setTimeout(cargarQR, 15000); }
+}
+
+function huella(E) { return [E.sellos, E.premios_listos, E.visitas.length, !!E.cumple_regalo, E.vip && E.vip.miembro, E.vip && E.vip.hasta].join('|'); }
+function vigilar() {
+  clearInterval(vigia);
+  vigia = setInterval(async () => {
+    if (document.hidden || $('#capa')) return;
+    const e = await rpc('cliente_estado', { p_key: store.get(CLAVE) }).catch(() => null);
+    if (!e || huella(e) === huella(ESTADO)) return;
+    const antes = ESTADO; ESTADO = e;
+    const nuevaVisita = e.visitas.length > antes.visitas.length || (e.visitas[0] && antes.visitas[0] && e.visitas[0].fecha !== antes.visitas[0].fecha);
+    tarjeta(nuevaVisita);
+    if (e.premios_listos > antes.premios_listos) toast('Completaste tu tarjeta. Tu premio está listo.', 'ok');
+    else if (nuevaVisita) toast('Te sumaron la visita de hoy. Gracias por volver.', 'ok');
+    else if (e.premios_listos < antes.premios_listos) toast('Premio entregado. Disfrútalo.', 'ok');
+    else if (antes.cumple_regalo && !e.cumple_regalo) toast('Regalo de cumpleaños entregado.', 'ok');
+    else if (e.vip && e.vip.miembro && !(antes.vip && antes.vip.miembro)) toast('Ya eres parte del ' + e.vip.nombre + '.', 'ok');
+  }, 4000);
+}
+
+function mostrarVipPago() {
+  const v = ESTADO.vip, capa = document.createElement('div'); capa.className = 'canje'; capa.id = 'capa';
+  capa.innerHTML = `<div class="hoja"><section class="vipcard" style="text-align:left;margin:0"><div class="lbl">Miembro</div><h3>${esc(v.nombre)}</h3>
+    <div class="vig">${esc(ESTADO.nombre)} · <span id="reloj"></span></div><ul>${(v.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul></section>
+    <p class="nota" style="margin-top:14px">Muestra esta pantalla en recepción al pagar para que apliquen tus beneficios.</p>
+    <button class="btn claro ancho" style="margin-top:14px" onclick="cerrarCanje()">Listo</button></div>`;
+  document.body.appendChild(capa);
+  const tick = () => { const r = $('#reloj'); if (!r) return clearInterval(t); r.textContent = new Date().toLocaleTimeString('es-PA', { hour: 'numeric', minute: '2-digit', second: '2-digit' }); };
+  const t = setInterval(tick, 1000); tick();
 }
 
 function vipHTML(E) {
@@ -156,7 +206,7 @@ function vipHTML(E) {
   const ben = (v.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('');
   if (v.miembro) return `<section class="vipcard"><div class="lbl">Miembro</div><h3>${esc(v.nombre)}</h3>
     <div class="vig">${v.hasta ? 'Activa hasta el ' + fechaCorta(v.hasta) : 'Membresía activa'}</div><ul>${ben}</ul>
-    <button class="btn ancho" onclick="pedir('vip')">Mostrar en recepción</button></section>`;
+    ${conBotones() ? `<button class="btn ancho" onclick="pedir('vip')">Mostrar en recepción</button>` : '<p class="vig" style="margin-top:12px">Recepción ve tus beneficios al escanear tu código.</p>'}</section>`;
   const gratis = !(+v.cuota > 0);
   return `<section class="bloque club"><h2>${esc(v.nombre)}</h2><p class="nota">${v.vencida ? 'Tu membresía venció. Renuévala en recepción y sigue con tus beneficios.' : 'Beneficios para los clientes de siempre.'}</p><ul>${ben}</ul>
     ${gratis ? '<button class="btn ancho" style="margin-top:14px" onclick="unirse()">Unirme al club</button>' : `<div class="precio">${dinero(v.cuota)} <span>al ${esc(v.periodo || 'mes')}</span></div><p class="nota" style="margin-top:6px">Pídelo en recepción y lo activan en tu tarjeta.</p>`}</section>`;
