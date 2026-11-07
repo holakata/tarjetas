@@ -188,13 +188,29 @@ document.addEventListener('fullscreenchange', () => { if (!document.fullscreenEl
 
 /* ---------- Canjear ---------- */
 function canjear() {
-  $('#cont').innerHTML = `<h2 class="tit">${MODO() === 'cliente' ? 'Canjear' : 'Escanear cliente'}</h2><p class="sub">${MODO() === 'cliente' ? 'Premios, regalos de cumpleaños y tarjetas de regalo se canjean igual: escanea el QR del cliente o escribe su código.' : 'Al cobrar, escanea el código de la tarjeta del cliente: ahí le sumas la visita, aplicas su beneficio VIP y le entregas su premio. Las tarjetas de regalo también se escanean aquí.'}</p>
+  $('#cont').innerHTML = `<h2 class="tit">${MODO() === 'cliente' ? 'Canjear' : 'Escanear cliente'}</h2><p class="sub">${MODO() === 'cliente' ? 'Premios, regalos de cumpleaños y tarjetas de regalo se canjean igual: escanea el QR del cliente o escribe su código.' : 'Al cobrar, busca al cliente por su WhatsApp (o escanea el código de su tarjeta). En su ficha le sumas la visita, aplicas su beneficio VIP y le entregas su premio. Las tarjetas de regalo también se escanean aquí.'}</p>
     <div class="grid2"><div class="tarjeta"><div id="lector"></div><p class="nota" id="camnota" style="margin-top:10px">El navegador te va a pedir permiso para usar la cámara.</p>
       <button class="btn claro ancho" id="camBtn" style="margin-top:10px" onclick="iniciarLector()">Abrir cámara</button></div>
-    <div><div class="tarjeta"><label for="cod">Código del cliente</label><input id="cod" class="codigo-in" maxlength="6" autocomplete="off" placeholder="······">
+    <div>${MODO() !== 'cliente' ? `<div class="tarjeta" style="margin-bottom:16px"><label for="bq">Buscar por WhatsApp o nombre</label><input id="bq" inputmode="search" autocomplete="off" placeholder="Ej. 6123 o Carla">
+      <ul class="lista" id="bres"></ul></div>` : ''}
+      <div class="tarjeta"><label for="cod">${MODO() !== 'cliente' ? 'O escribe el código de su tarjeta' : 'Código del cliente'}</label><input id="cod" class="codigo-in" maxlength="6" autocomplete="off" placeholder="······">
       <button class="btn ancho" style="margin-top:12px" onclick="buscar($('#cod').value)">Buscar</button></div>
       <div id="res" style="margin-top:16px"></div></div></div>`;
   $('#cod').addEventListener('keydown', (e) => { if (e.key === 'Enter') buscar(e.target.value); });
+  const bq = $('#bq'); if (!bq) return;
+  let t = null;
+  bq.oninput = () => { clearTimeout(t); t = setTimeout(async () => {
+    const q = bq.value.trim(); if (q.length < 2) { $('#bres').innerHTML = ''; return; }
+    try {
+      const L = await rpc('ficha_buscar', { p_q: q });
+      $('#bres').innerHTML = L.length ? L.map((c) => `<li style="cursor:pointer" onclick="abrirFicha('${c.tel}')"><div class="av">${esc(c.nombre.trim()[0])}</div><div class="info"><b>${esc(c.nombre)}</b><span>${telBonito(c.tel)}</span></div><span class="enlace">Abrir</span></li>`).join('')
+        : '<li class="vacio">No hay clientes con ese dato. Si es su primera vez, que escanee el QR para crear su tarjeta.</li>';
+    } catch (e) { toast(msg(e), 'mal'); }
+  }, 250); };
+}
+async function abrirFicha(tel) {
+  try { const f = await rpc('ficha_abrir', { p_tel: tel }); if ($('#bq')) { $('#bq').value = ''; $('#bres').innerHTML = ''; } ficha(f); $('#res').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  catch (e) { toast(msg(e), 'mal'); }
 }
 async function iniciarLector() {
   try {
@@ -216,7 +232,8 @@ function ficha(f) {
     <h3>${esc(f.nombre)}</h3><p class="det">${telBonito(f.tel)} · ${f.total_visitas} ${f.total_visitas === 1 ? 'visita' : 'visitas'} · cliente desde ${fechaCorta(f.cliente_desde)}</p>
     <div class="puntos" style="margin-bottom:14px">${Array.from({ length: meta }, (_, i) => `<i class="${i < llenos ? 'on' : ''}"></i>`).join('')}</div>
     ${acc}${V && !V.miembro ? `<p class="nota" style="margin-top:12px">${V.vencida ? 'Su membresía del ' + esc(V.nombre) + ' venció.' : 'No es miembro del ' + esc(V.nombre) + '.'} <button class="enlace" onclick="ir('vip').then(()=>{$('#vt').value='${f.tel}'})">${V.vencida ? 'Renovar' : 'Activar'}</button></p>` : ''}
-    <button class="btn claro ancho" style="margin-top:16px" onclick="$('#res').innerHTML='';$('#cod').value='';iniciarLector()">Siguiente cliente</button></div>`;
+    <div class="acciones" style="margin-top:16px"><a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(f.tel)}?text=${encodeURIComponent(`Hola ${f.nombre.split(' ')[0]}, aquí tienes tu tarjeta de ${NEG.nombre}: ${BASE}t/?n=${NEG.slug} . Guárdala para ver tus sellos y beneficios.`)}">Enviarle su tarjeta por WhatsApp</a>
+    <button class="btn claro" style="min-height:40px;flex:1" onclick="$('#res').innerHTML='';$('#cod').value='';${MODO() === 'recepcion' ? "$('#bq')&&$('#bq').focus()" : 'iniciarLector()'}">Siguiente cliente</button></div></div>`;
 }
 async function accion(cod, a) {
   $$('.accion .btn').forEach((b) => (b.disabled = true));
@@ -267,7 +284,7 @@ async function clientes() {
   const meta = NEG.config.meta || 6, mes = new Date().getMonth() + 1;
   const cumple = DATOS.lista.filter((c) => c.cumple_mes === mes);
   const lejos = DATOS.lista.filter((c) => c.dias_sin_venir !== null && c.dias_sin_venir >= 30);
-  const fila = (c, accion = '') => `<li><div class="av">${esc(c.nombre.trim()[0])}</div><div class="info"><b>${esc(c.nombre)}</b>
+  const fila = (c, accion = '') => `<li style="cursor:pointer" onclick="if(!event.target.closest('a')){ir('canjear').then(()=>abrirFicha('${c.tel}'))}"><div class="av">${esc(c.nombre.trim()[0])}</div><div class="info"><b>${esc(c.nombre)}</b>
       <span>${telBonito(c.tel)} · ${c.ultima ? 'última visita ' + fechaCorta(c.ultima) : 'sin visitas'}</span></div>
       ${c.vip ? '<span class="chip" style="background:#23262B;color:#D6B680">VIP</span>' : ''}${c.premios_listos > 0 ? '<span class="chip">Premio listo</span>' : `<div class="puntos">${Array.from({ length: meta }, (_, i) => `<i class="${i < c.sellos ? 'on' : ''}"></i>`).join('')}</div>`}${accion}</li>`;
   const waTxt = (c, tipo) => {

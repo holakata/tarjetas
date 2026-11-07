@@ -141,9 +141,9 @@ function tarjeta(animar = false) {
   const faltan = meta - E.sellos;
   let extra = '';
   const cb = conBotones();
-  if (E.premios_listos > 0) extra += `<section class="bloque premio-listo"><h2>Tu premio está listo</h2><p>${esc(E.premio || 'Tu premio')}. ${cb ? 'Tócalo cuando estés en recepción.' : 'Te lo entregan en recepción cuando muestres tu código.'}</p>${cb ? `<button class="btn ancho" onclick="pedir('premio')">Usar mi premio</button>` : ''}</section>`;
+  if (E.premios_listos > 0) extra += `<section class="bloque premio-listo"><h2>Tu premio está listo</h2><p>${esc(E.premio || 'Tu premio')}. ${cb ? 'Tócalo cuando estés en recepción.' : 'Te lo entregan en recepción cuando pagues.'}</p>${cb ? `<button class="btn ancho" onclick="pedir('premio')">Usar mi premio</button>` : ''}</section>`;
   if (E.cumple_regalo) extra += `<section class="bloque premio-listo"><h2>Feliz cumpleaños, ${esc(E.nombre.split(' ')[0])}</h2><p>${esc(E.cumple_regalo)}. Es tuyo durante todo este mes${cb ? '.' : '; pídelo en recepción.'}</p>${cb ? `<button class="btn ancho" onclick="pedir('cumple')">Usar mi regalo</button>` : ''}</section>`;
-  const miqr = conMiQR() ? `<section class="bloque miqr"><h2>Tu código para recepción</h2><p class="nota">Al pagar, muéstralo en recepción. Ahí te suman la visita${E.vip ? ' y aplican tus beneficios' : ''}.</p><div class="qr" id="miqr"><p class="nota">Cargando…</p></div><div class="codigo" id="micod"></div></section>` : '';
+  const miqr = conMiQR() ? `<section class="bloque miqr"><h2>En recepción</h2><p class="nota">Al pagar, solo di tu número de WhatsApp y te suman la visita${E.vip ? ' y aplican tus beneficios' : ''}. Si prefieres, muéstrales este código.</p><div class="qr" id="miqr"><p class="nota">Cargando…</p></div><div class="codigo" id="micod"></div></section>` : '';
   const hist = E.visitas.length ? E.visitas.map((v) => `<li><span>${fechaCorta(v.fecha)}</span><span>${v.sellos > 1 ? '+2 sellos' : '+1 sello'}</span></li>`).join('') : '<li><span>Todavía no tienes visitas.</span><span></span></li>';
   $('#vista').innerHTML = `
     <section class="tarjeta">
@@ -152,13 +152,22 @@ function tarjeta(animar = false) {
       <div class="sellos${meta > 6 ? ' m8' : ''}">${celdas}</div>
       <div class="pie-t"><span>Premio: ${esc(E.premio || '')}</span></div>
     </section>
+    ${guardarHTML()}
     ${miqr}
     ${extra}
     ${vipHTML(E)}
     ${E.premios_listos > 0 ? '' : `<p class="faltan">${E.hoy_sellado ? 'Ya sumaste tu sello de hoy. ' : ''}Te ${faltan === 1 ? 'falta <b>1 visita</b>' : `faltan <b>${faltan} visitas</b>`} para tu premio.</p>`}
     <section class="bloque"><h2>Tus visitas</h2><ul class="hist">${hist}</ul></section>
-    <section class="bloque"><h2>¿Cómo sumo un sello?</h2><p class="nota">${MODO() === 'recepcion' ? 'En cada visita, al pagar, muestra tu código en recepción y ellos te suman el sello.' : MODO() === 'ambos' ? 'En cada visita, escanea el QR de recepción o muéstrales tu código al pagar. Se suma uno por día.' : 'En cada visita, escanea con la cámara el QR que está en recepción. Se suma uno por día.'}</p></section>`;
+    <section class="bloque"><h2>¿Cómo sumo un sello?</h2><p class="nota">${MODO() === 'recepcion' ? 'En cada visita, al pagar, di tu número de WhatsApp en recepción y te suman el sello.' : MODO() === 'ambos' ? 'En cada visita, escanea el QR de recepción o muéstrales tu código al pagar. Se suma uno por día.' : 'En cada visita, escanea con la cámara el QR que está en recepción. Se suma uno por día.'}</p></section>`;
   if (conMiQR()) { cargarQR(); vigilar(); }
+}
+
+function guardarHTML() {
+  if (store.get('kata-guardada-' + slug)) return '';
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  return `<section class="bloque" id="guardar" style="border:1.5px dashed var(--linea);box-shadow:none"><h2>Guarda tu tarjeta en el celular</h2>
+    <p class="nota">${ios ? 'Toca el botón de compartir (el cuadrito con la flecha) y luego <b>Agregar a pantalla de inicio</b>.' : 'Toca los tres puntitos del navegador y luego <b>Agregar a pantalla principal</b>.'} Así la abres como una app, sin buscar el enlace.</p>
+    <button class="enlace" onclick="store.set('kata-guardada-${slug}','1');$('#guardar').remove()">Ya la guardé</button></section>`;
 }
 
 async function cargarQR() {
@@ -206,7 +215,7 @@ function vipHTML(E) {
   const ben = (v.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('');
   if (v.miembro) return `<section class="vipcard"><div class="lbl">Miembro</div><h3>${esc(v.nombre)}</h3>
     <div class="vig">${v.hasta ? 'Activa hasta el ' + fechaCorta(v.hasta) : 'Membresía activa'}</div><ul>${ben}</ul>
-    ${conBotones() ? `<button class="btn ancho" onclick="pedir('vip')">Mostrar en recepción</button>` : '<p class="vig" style="margin-top:12px">Recepción ve tus beneficios al escanear tu código.</p>'}</section>`;
+    ${conBotones() ? `<button class="btn ancho" onclick="pedir('vip')">Mostrar en recepción</button>` : '<p class="vig" style="margin-top:12px">Recepción ve tus beneficios cuando das tu número al pagar.</p>'}</section>`;
   const gratis = !(+v.cuota > 0);
   return `<section class="bloque club"><h2>${esc(v.nombre)}</h2><p class="nota">${v.vencida ? 'Tu membresía venció. Renuévala en recepción y sigue con tus beneficios.' : 'Beneficios para los clientes de siempre.'}</p><ul>${ben}</ul>
     ${gratis ? '<button class="btn ancho" style="margin-top:14px" onclick="unirse()">Unirme al club</button>' : `<div class="precio">${dinero(v.cuota)} <span>al ${esc(v.periodo || 'mes')}</span></div><p class="nota" style="margin-top:6px">Pídelo en recepción y lo activan en tu tarjeta.</p>`}</section>`;
