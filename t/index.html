@@ -131,7 +131,7 @@ function tarjeta(animar = false) {
       <div class="arriba"><div class="fila-t"><div><div class="lbl">CLIENTE</div><div class="nom">${esc(E.nombre)}</div></div>
       <div class="cuenta"><b>${llenos}</b><span> / ${meta}</span></div></div></div>
       <div class="sellos${meta > 6 ? ' m8' : ''}">${celdas}</div>
-      <div class="pie-t"><span>${esc(E.premio || '')}</span><span>N.º ${esc(E.miembro)}</span></div>
+      <div class="pie-t"><span>Premio: ${esc(E.premio || '')}</span></div>
     </section>
     ${extra}
     ${E.premios_listos > 0 ? '' : `<p class="faltan">${E.hoy_sellado ? 'Ya sumaste tu sello de hoy. ' : ''}Te ${faltan === 1 ? 'falta <b>1 visita</b>' : `faltan <b>${faltan} visitas</b>`} para tu premio.</p>`}
