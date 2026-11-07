@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261107214436">
+<meta name="kata-version" content="20261107221818">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#075F7A" data-marca>
 <title>Mi tarjeta</title>
@@ -122,17 +122,20 @@
   @keyframes aparece { from { transform: translateY(-10px); opacity: 0; } }
   .promos { margin-top: 22px; }
   .promos h4 { font-size: 13px; font-weight: 600; color: var(--tinta-2); margin-bottom: 10px; }
-  .promo-scroll { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 20px; margin: 0 -20px; padding: 2px 20px 8px; scrollbar-width: none; }
-  .promo-scroll::-webkit-scrollbar { display: none; }
-  .promo { flex: 0 0 78%; scroll-snap-align: start; background: #fff; border-radius: 18px; padding: 16px 16px 14px; box-shadow: var(--sombra); border-top: 3px solid #D6B680; }
-  .promo-scroll.una .promo { flex-basis: 100%; }
-  .promo { border-left: 0; border-right: 0; border-bottom: 0; text-align: left; font: inherit; color: inherit; cursor: pointer; transition: transform .15s; }
+  .promo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .promo { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 72px; background: #fff; border: 0; border-top: 3px solid #D6B680; border-radius: 16px; padding: 12px 12px 12px 14px; box-shadow: var(--sombra); text-align: left; font: inherit; color: inherit; cursor: pointer; transition: transform .15s; }
   .promo:active { transform: scale(.97); }
-  .promo small span { float: right; display: inline-flex; align-items: center; gap: 2px; color: var(--marca-2); }
-  .promo small span svg { width: 14px; height: 14px; }
-  .promo b { font-family: "Gloock", serif; font-weight: 400; font-size: 19px; display: block; line-height: 1.15; }
-  .promo p { font-size: 14px; color: var(--tinta-2); margin-top: 6px; line-height: 1.4; }
-  .promo small { display: block; margin-top: 10px; font-size: 12px; color: #A27E3E; font-weight: 600; }
+  .promo b { font-family: "Gloock", serif; font-weight: 400; font-size: 17px; line-height: 1.15; }
+  .promo .fl { color: #A27E3E; display: grid; flex: none; }
+  .promo:only-child { grid-column: 1 / -1; }
+  .regalar { display: flex; align-items: center; gap: 14px; width: 100%; margin-top: 10px; padding: 14px 16px; border-radius: 20px; background: #fff; color: var(--tinta); box-shadow: var(--sombra); text-decoration: none; transition: transform .15s; }
+  .regalar:active { transform: scale(.98); }
+  .regalar .ic { width: 42px; height: 42px; border-radius: 50%; background: var(--fondo-marca); color: var(--marca-2); display: grid; place-items: center; flex: none; }
+  .regalar .ic svg { width: 22px; height: 22px; }
+  .regalar b { display: block; font-size: 16px; } .regalar span span { font-size: 13px; color: var(--tinta-2); }
+  .regalar .fl { margin-left: auto; display: grid; color: var(--tinta-2); }
+  .mi-wa { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; margin-top: 14px; border-radius: 16px; background: #1F8F55; color: #fff; font-weight: 600; font-size: 16px; text-decoration: none; }
+  .mi-wa svg { width: 22px; height: 22px; }
   .acciones-r { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
   .acc { background: #fff; border: 0; border-radius: 20px; padding: 14px 6px 12px; box-shadow: var(--sombra); display: flex; flex-direction: column; align-items: center; gap: 8px; font: inherit; font-size: 13px; font-weight: 600; color: var(--tinta); cursor: pointer; transition: transform .15s; }
   .acc:active { transform: scale(.95); }
@@ -270,7 +273,7 @@ function pintar(animar = false) {
   const frase = E.premios_listos > 0 ? `<b>Visita sumada.</b> Completaste tu tarjeta y ${esc((E.premio || 'tu premio').toLowerCase())} te espera.`
     : `<b>Visita sumada.</b> Te ${faltan === 1 ? 'falta 1 visita' : `faltan ${faltan} visitas`} para tu ${esc((E.premio || 'premio').toLowerCase())}.`;
   const PR = promosVigentes();
-  const promos = vipActivo && PR.length ? `<div class="promos"><h4>Promociones del club</h4><div class="promo-scroll${PR.length === 1 ? ' una' : ''}">${PR.map((x, i) => `<button class="promo" onclick="hojaPromo(${i})"><b>${esc(x.titulo)}</b><p>${esc(x.detalle || '')}</p><small>${x.hasta ? 'Hasta el ' + fechaCorta(x.hasta) : 'Todo el mes'}<span>Agendar ${I.fl}</span></small></button>`).join('')}</div></div>` : '';
+  const promos = vipActivo && PR.length ? `<div class="promos"><h4>Promociones del club</h4><div class="promo-grid">${PR.map((x, i) => `<button class="promo" onclick="hojaPromo(${i})"><b>${esc(x.titulo)}</b><span class="fl">${I.fl}</span></button>`).join('')}</div></div>` : '';
 
   const wa = (() => { const t = String(NEG.config.whatsapp || '').replace(/\D/g, ''); return t.length === 8 ? '507' + t : t; })();
   $('#vista').innerHTML = `
@@ -280,7 +283,8 @@ function pintar(animar = false) {
     <div class="cuerpo">
       ${animar ? `<div class="progreso momento" id="momento"><p>${frase}</p><div class="barra"><i id="bar"></i></div></div>` : ''}
       ${avisos.length ? `<div class="avisos">${avisos.join('')}</div>` : ''}
-      ${wa ? `<a class="agendar" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent('Hola, soy ' + E.nombre + '. Quisiera agendar una cita.')}"><span class="ic">${I.wa}</span><span><b>Agendar cita</b><span>Escríbenos por WhatsApp</span></span><span class="fl">${I.fl}</span></a>` : ''}
+      ${wa ? `<a class="agendar" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent('Hola, soy ' + E.nombre + '. Quisiera agendar una cita.')}"><span class="ic">${I.wa}</span><span><b>Agendar cita</b><span>Escríbenos por WhatsApp</span></span><span class="fl">${I.fl}</span></a>
+        <a class="regalar" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent('Hola, soy ' + E.nombre + '. Quisiera comprar una tarjeta de regalo.')}"><span class="ic">${I.regalo}</span><span><b>Regalar una visita</b><span>Tarjeta de regalo para alguien especial</span></span><span class="fl">${I.fl}</span></a>` : ''}
       ${V && !V.miembro ? `<button class="club-inv" onclick="hojaClub()"><span class="ic">${I.corona}</span><span><b>${esc(V.nombre)}</b><span>${PR.length ? PR.length + (PR.length === 1 ? ' promoción' : ' promociones') + ' para miembros' : (+V.cuota > 0 ? dinero(V.cuota) + ' al ' + esc(V.periodo || 'mes') : 'Ver beneficios')}</span></span><span class="fl">${I.fl}</span></button>` : ''}
       ${promos}
       <p class="guardar-l"><button class="enlace" onclick="hojaGuardar()">${I.cel} Guardar en mi celular</button></p>
@@ -383,8 +387,14 @@ function hojaPremio(tipo) {
 }
 function hojaGuardar() {
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  hoja(`<h3>Guarda tu tarjeta en el celular</h3><p class="nota">Así la abres con un toque, como una app.</p>
-    <ul class="pasos" style="margin-top:12px">${ios ? '<li><i>1</i><span>Toca el botón de compartir de Safari (el cuadrito con la flecha hacia arriba).</span></li><li><i>2</i><span>Toca <b>Agregar a pantalla de inicio</b>.</span></li><li><i>3</i><span>Toca <b>Agregar</b>.</span></li>'
+  const tel = String(ESTADO && ESTADO.tel || '').replace(/\D/g, ''), propio = tel.length === 8 ? '507' + tel : tel;
+  const enlace = location.origin + location.pathname + '?n=' + encodeURIComponent(slug) + '&k=' + encodeURIComponent(store.get(CLAVE) || '');
+  const txt = `Mi tarjeta de ${NEG.nombre}: ${enlace}`;
+  hoja(`<h3>Ten tu tarjeta siempre a mano</h3><p class="nota">Mándatela a tu propio WhatsApp y ábrela desde ahí cuando quieras.</p>
+    <a class="mi-wa" target="_blank" rel="noopener" href="https://wa.me/${propio}?text=${encodeURIComponent(txt)}">${I.wa} Enviarme mi tarjeta por WhatsApp</a>
+    <p class="nota" style="margin-top:8px;font-size:12px">Ese enlace abre tu tarjeta directo. Es solo tuyo, no lo compartas.</p>
+    <p style="margin-top:22px;font-weight:600">O guárdala como app en tu celular</p>
+    <ul class="pasos" style="margin-top:6px">${ios ? '<li><i>1</i><span>Toca el botón de compartir de Safari (el cuadrito con la flecha hacia arriba).</span></li><li><i>2</i><span>Toca <b>Agregar a pantalla de inicio</b>.</span></li><li><i>3</i><span>Toca <b>Agregar</b>.</span></li>'
       : '<li><i>1</i><span>Toca los tres puntitos de arriba a la derecha.</span></li><li><i>2</i><span>Toca <b>Agregar a la pantalla principal</b>.</span></li><li><i>3</i><span>Confirma con <b>Agregar</b>.</span></li>'}</ul>
     <p class="nota" style="margin-top:8px">Si no la guardas, no pasa nada: en recepción te encuentran con tu número.</p>${btnCerrar('Entendido')}`);
 }
