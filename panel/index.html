@@ -233,7 +233,7 @@ async function clientes() {
     const t = tipo === 'cumple'
       ? `Hola ${n}, feliz cumpleaños de parte de ${NEG.nombre}. Este mes tienes un regalo esperándote en tu tarjeta: ${link}`
       : `Hola ${n}, te extrañamos en ${NEG.nombre}. Tu tarjeta va en ${c.sellos} de ${meta} sellos. ¿Te agendamos esta semana?`;
-    return `<a class="wa" target="_blank" rel="noopener" href="https://wa.me/507${c.tel}?text=${encodeURIComponent(t)}">WhatsApp</a>`;
+    return `<a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(c.tel)}?text=${encodeURIComponent(t)}">WhatsApp</a>`;
   };
   $('#cont').innerHTML = `<div class="stats"><div class="stat"><b>${DATOS.clientes}</b><span>clientes con tarjeta</span></div>
       <div class="stat"><b>${DATOS.sellos_mes}</b><span>sellos este mes</span></div><div class="stat"><b>${DATOS.premios_mes}</b><span>premios entregados</span></div></div>
@@ -258,6 +258,7 @@ async function regalos() {
       <div class="campo" id="cServ"><label for="sv">Servicio</label><input id="sv" list="servs" placeholder="Ej. Masaje relajante de 60 minutos"><datalist id="servs">${serv}</datalist></div>
       <div class="campo oculto" id="cMto"><label for="mt">Monto (B/.)</label><input id="mt" inputmode="decimal" placeholder="50"></div>
       <div class="fila"><div class="campo"><label for="pa">Para</label><input id="pa" placeholder="Mamá"></div><div class="campo"><label for="de">De</label><input id="de" placeholder="Andrea"></div></div>
+      <div class="campo"><label for="wt">WhatsApp de quien la recibe</label><input id="wt" inputmode="tel" placeholder="6000-0000"><p class="nota" style="margin-top:6px">Si quien la compra prefiere mandarla él, pon su número.</p></div>
       <div class="campo"><label for="ms">Mensaje (opcional)</label><textarea id="ms" maxlength="180" placeholder="Para que te consientas un rato."></textarea></div>
       <div class="campo"><label for="vc">Válida hasta</label><input id="vc" type="date" value="${vence}"></div>
       <p class="error" id="err"></p><button class="btn ancho" id="go">Crear tarjeta de regalo</button></form><div id="hecho"></div></div>
@@ -268,12 +269,13 @@ async function regalos() {
     const tipo = $('input[name=tp]:checked').value;
     try {
       const r = await rpc('regalo_crear', { p_para: $('#pa').value, p_de: $('#de').value, p_mensaje: $('#ms').value, p_tipo: tipo, p_servicio: $('#sv').value,
-        p_monto: tipo === 'monto' ? parseFloat(($('#mt').value || '').replace(',', '.')) : null, p_vence: $('#vc').value || null });
+        p_monto: tipo === 'monto' ? parseFloat(($('#mt').value || '').replace(',', '.')) : null, p_vence: $('#vc').value || null, p_tel: $('#wt').value || null });
       const link = `${BASE}regalo/?g=${r.codigo}`, para = $('#pa').value.trim();
-      const txt = `Hola, tienes una tarjeta de regalo de ${NEG.nombre}${$('#de').value.trim() ? ' de parte de ' + $('#de').value.trim() : ''}. Ábrela aquí: ${link}`;
+      const txt = textoRegalo(para, $('#de').value.trim(), link);
       $('#f').reset(); $('#vc').value = vence; $('#cServ').classList.remove('oculto'); $('#cMto').classList.add('oculto');
       $('#hecho').innerHTML = `<div class="creado"><b>Lista la tarjeta para ${esc(para)}</b><div class="link">${esc(link)}</div>
-        <div class="acciones"><a class="wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">Enviar por WhatsApp</a>
+        <div class="acciones">${r.tel ? `<a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(r.tel)}?text=${encodeURIComponent(txt)}">Enviar a ${esc(telBonito(r.tel))}</a>` : ''}
+        <a class="${r.tel ? 'btn claro' : 'wa'}" style="min-height:40px" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">${r.tel ? 'Enviar a otro número' : 'Enviar por WhatsApp'}</a>
         <button class="btn claro" style="min-height:40px" onclick="navigator.clipboard.writeText('${link}').then(()=>toast('Enlace copiado','ok'))">Copiar enlace</button>
         <a class="btn claro" style="min-height:40px" target="_blank" href="${link}">Ver</a></div></div>`;
       listaRegalos();
@@ -282,12 +284,17 @@ async function regalos() {
   };
   listaRegalos();
 }
+function waNum(t) { t = String(t || '').replace(/\D/g, ''); return t.length <= 8 ? '507' + t : t; }
+function textoRegalo(para, de, link) {
+  return `Hola ${para}, ${de ? de + ' te regaló' : 'tienes'} una tarjeta de regalo de ${NEG.nombre}. Ábrela aquí: ${link}`;
+}
 async function listaRegalos() {
   try {
     const d = await rpc('panel_resumen');
     $('#lst').innerHTML = d.regalos.length ? d.regalos.map((g) => `<li><div class="info"><b>Para ${esc(g.para)}${g.de ? ' · de ' + esc(g.de) : ''}</b>
       <span>${g.tipo === 'servicio' ? esc(g.servicio) : dinero(g.saldo) + ' de ' + dinero(g.monto)} · ${fechaCorta(g.creado)}</span></div>
       <span class="estado ${g.estado}">${{ activa: 'Activa', usada: 'Usada', anulada: 'Anulada' }[g.estado]}</span>
+      ${g.tel && g.estado === 'activa' ? `<a class="wa" style="min-height:36px;padding:0 10px" target="_blank" rel="noopener" href="https://wa.me/${waNum(g.tel)}?text=${encodeURIComponent(textoRegalo(g.para, g.de, BASE + 'regalo/?g=' + g.codigo))}">Reenviar</a>` : ''}
       <a class="enlace" target="_blank" href="${BASE}regalo/?g=${g.codigo}">Ver</a></li>`).join('') : '<li class="vacio">Todavía no hay tarjetas.</li>';
   } catch (e) { $('#lst').innerHTML = `<li class="vacio">${esc(msg(e))}</li>`; }
 }
