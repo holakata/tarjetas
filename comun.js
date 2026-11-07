@@ -55,12 +55,22 @@ const MENSAJES = {
 };
 const msg = (e) => MENSAJES[e.code] || 'Algo no funcionó. Revisa tu conexión e intenta de nuevo.';
 
+function hexRgb(h) { h = String(h).replace('#', ''); if (h.length === 3) h = h.split('').map((c) => c + c).join(''); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+function mezclar(a, b, t) { const x = hexRgb(a), y = hexRgb(b); return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
+function rgba(h, a) { const [r, g, b] = hexRgb(h); return `rgba(${r},${g},${b},${a})`; }
 function aplicarMarca(cfg) {
   const r = document.documentElement.style;
   if (cfg.color) r.setProperty('--marca', cfg.color);
   if (cfg.color2) r.setProperty('--marca-2', cfg.color2);
   if (cfg.fondo) r.setProperty('--fondo-marca', cfg.fondo);
-  r.setProperty('--acento', cfg.color3 || cfg.color || '#2B86C2');
+  // Tonos derivados calculados aquí (no con color-mix de CSS, que los iPhone con iOS viejo no entienden)
+  const m1 = cfg.color || '#2B86C2', m2 = cfg.color2 || '#123A5E', ac = cfg.color3 || m1;
+  r.setProperty('--acento', ac);
+  r.setProperty('--acento-glow', rgba(ac, .55));
+  r.setProperty('--acento-suave', rgba(ac, .35));
+  r.setProperty('--marca-claro', mezclar(m1, '#ffffff', .18));
+  r.setProperty('--marca-oscuro', mezclar(m2, '#000000', .38));
+  r.setProperty('--sombra-marca', rgba(m2, .3));
   const tc = document.querySelector('meta[name="theme-color"][data-marca]'); if (tc && cfg.color2) tc.content = cfg.color2;
 }
 

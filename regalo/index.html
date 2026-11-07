@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261107213524">
+<meta name="kata-version" content="20261107214012">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Tarjeta de regalo</title>
@@ -52,9 +52,9 @@
     background: radial-gradient(120% 140% at 100% 100%, rgba(255,255,255,.2) 0%, transparent 45%), linear-gradient(150deg, var(--marca) 0%, var(--marca-2) 100%); box-shadow: 0 10px 24px rgba(10,20,40,.3); border: 1px solid rgba(255,255,255,.25);
     transition: transform .9s cubic-bezier(.2,.8,.2,1); }
   .carta .neg { font-family: "Gloock", serif; font-size: 16px; } .carta .que { font-size: 10px; opacity: .8; } .carta .valor { font-family: "Gloock", serif; font-size: 22px; line-height: 1.05; } .carta .pd { font-size: 11px; display: flex; justify-content: space-between; }
-  .cinta-v, .cinta-h { position: absolute; z-index: 5; background: linear-gradient(90deg, var(--marca-2), color-mix(in srgb, var(--marca) 70%, #fff 30%) 45%, var(--marca) 60%, var(--marca-2)); transition: transform .5s cubic-bezier(.5,0,.75,0), opacity .4s .2s; }
+  .cinta-v, .cinta-h { position: absolute; z-index: 5; background: var(--marca); background: linear-gradient(90deg, var(--marca-2), var(--marca-claro, var(--marca)) 45%, var(--marca) 60%, var(--marca-2)); transition: transform .5s cubic-bezier(.5,0,.75,0), opacity .4s .2s; }
   .cinta-v { top: 0; bottom: 0; left: calc(50% - 13px); width: 26px; transform-origin: top; }
-  .cinta-h { left: 0; right: 0; top: calc(56% - 12px); height: 24px; background: linear-gradient(180deg, var(--marca-2), color-mix(in srgb, var(--marca) 70%, #fff 30%) 45%, var(--marca) 60%, var(--marca-2)); transform-origin: right; }
+  .cinta-h { left: 0; right: 0; top: calc(56% - 12px); height: 24px; background: var(--marca); background: linear-gradient(180deg, var(--marca-2), var(--marca-claro, var(--marca)) 45%, var(--marca) 60%, var(--marca-2)); transform-origin: right; }
   .lazo { position: absolute; z-index: 6; width: 120px; left: calc(50% - 60px); top: calc(56% - 50px); filter: drop-shadow(0 6px 8px rgba(0,0,0,.25)); transition: transform .5s cubic-bezier(.5,0,.75,0), opacity .4s .1s; animation: late 2.4s ease-in-out infinite; }
   @keyframes late { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
   .toca { margin-top: 44px; color: var(--tinta-2); font-size: 14px; display: flex; align-items: center; gap: 8px; transition: opacity .3s; }
@@ -136,7 +136,7 @@ async function usar() {
   } catch (e) { toast(msg(e), 'mal'); }
 }
 const LAZO = `<svg viewBox="0 0 120 100" aria-hidden="true">
-  <defs><linearGradient id="sat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:color-mix(in srgb, var(--marca) 65%, #fff 35%)"/><stop offset=".55" style="stop-color:var(--marca)"/><stop offset="1" style="stop-color:var(--marca-2)"/></linearGradient></defs>
+  <defs><linearGradient id="sat" x1="0" y1="0" x2="1" y2="1"><stop offset="0" style="stop-color:var(--marca-claro, var(--marca))"/><stop offset=".55" style="stop-color:var(--marca)"/><stop offset="1" style="stop-color:var(--marca-2)"/></linearGradient></defs>
   <path d="M55 52 L36 96 L45 91 L50 99 L62 56Z" fill="url(#sat)"/><path d="M65 52 L84 96 L75 91 L70 99 L58 56Z" fill="url(#sat)"/>
   <path d="M60 46 C44 18 10 14 12 38 C14 58 42 58 60 46Z" fill="url(#sat)"/><path d="M60 46 C76 18 110 14 108 38 C106 58 78 58 60 46Z" fill="url(#sat)"/>
   <path d="M58 45 C44 30 24 28 22 38 C22 46 40 48 58 45Z" style="fill:var(--marca-2)" opacity=".35"/><path d="M62 45 C76 30 96 28 98 38 C98 46 80 48 62 45Z" style="fill:var(--marca-2)" opacity=".35"/>
