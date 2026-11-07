@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta name="kata-version" content="20261107212634">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Panel de recepción</title>
@@ -36,6 +37,10 @@
   .barrita i { display: block; height: 100%; background: var(--marca); transition: width 1s linear; }
   .mostrador .seg { font-size: 13px; color: var(--tinta-2); margin-top: 8px; }
   body.full .barra { display: none; }
+  .salir-m { margin-top: 34px; position: relative; overflow: hidden; border: 1px solid var(--linea); background: #fff; color: var(--tinta-2); font: inherit; font-size: 13px; padding: 10px 16px; border-radius: 999px; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; touch-action: none; }
+  .salir-m i { position: absolute; inset: 0; width: 0; background: var(--fondo-marca); transition: width 0s; }
+  .salir-m.carga i { width: 100%; transition: width 1.5s linear; }
+  .salir-m span { position: relative; }
   body.full .cont { padding-top: 6vh; }
 
   /* Canjear */
@@ -165,12 +170,14 @@ function mostrador() {
   if (MODO() === 'recepcion') {
     $('#cont').innerHTML = `<div class="mostrador"><h2>¿Primera vez? Crea tu tarjeta</h2><p>Abre la cámara de tu celular y apunta aquí. Al pagar, muestra tu código en recepción.</p>
       <div class="qrbox">${qrSVG(`${BASE}t/?n=${encodeURIComponent(NEG.slug)}`, 420)}</div>
-      <div style="margin-top:22px"><button class="btn claro" onclick="pantallaCompleta()">Pantalla completa</button></div></div>`;
+      ${SALIR_MOSTRADOR}</div>`;
+    bloquearMostrador();
     return;
   }
   $('#cont').innerHTML = `<div class="mostrador"><h2>Escanea y suma tu visita</h2><p>Abre la cámara de tu celular y apunta aquí.</p>
     <div class="qrbox" id="qr"></div><div class="barrita"><i id="bar"></i></div><div class="seg" id="seg">&nbsp;</div>
-    <div style="margin-top:22px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><button class="btn claro" onclick="pantallaCompleta()">Pantalla completa</button></div></div>`;
+    ${SALIR_MOSTRADOR}</div>`;
+  bloquearMostrador();
   refrescarQR();
 }
 async function refrescarQR() {
@@ -185,13 +192,26 @@ async function refrescarQR() {
     tTimer = setTimeout(refrescarQR, r.segundos * 1000 + 400);
   } catch (e) { $('#seg').textContent = msg(e); tTimer = setTimeout(refrescarQR, 5000); }
 }
+/* Mientras el QR está a la vista de los clientes se ocultan las pestañas.
+   Para volver al panel hay que mantener presionado el botón (un toque por accidente no basta). */
+const SALIR_MOSTRADOR = '<button class="salir-m" id="salirM"><i></i><span>Mantén presionado para volver al panel</span></button>';
+function bloquearMostrador() {
+  document.body.classList.add('full');
+  const el = document.documentElement;
+  if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
+  const b = $('#salirM'); let t = null;
+  const soltar = () => { clearTimeout(t); b.classList.remove('carga'); };
+  b.addEventListener('pointerdown', (ev) => { ev.preventDefault(); b.classList.add('carga'); t = setTimeout(() => { soltar(); if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen().catch(() => {}); ir('canjear'); }, 1500); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((e) => b.addEventListener(e, soltar));
+  b.addEventListener('contextmenu', (ev) => ev.preventDefault());
+}
 function pantallaCompleta() {
   document.body.classList.toggle('full');
   const el = document.documentElement;
   if (!document.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(() => {});
   else if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
 }
-document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) document.body.classList.remove('full'); });
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && pestaña !== 'mostrador') document.body.classList.remove('full'); });
 
 /* ---------- Canjear ---------- */
 function canjear() {
@@ -369,14 +389,15 @@ async function vip() {
       <div class="campo"><label for="vm">Tiempo</label><select id="vm"><option value="1">1 mes</option><option value="3">3 meses</option><option value="6">6 meses</option><option value="12">1 año</option></select></div>
       <p class="error" id="err"></p><button class="btn ancho" id="go">Activar o renovar</button></form>
       <p class="nota" style="margin-top:14px">Beneficios: ${(V.beneficios || []).map(esc).join(' · ')}</p></div>
-    <div class="tarjeta"><h2 class="tit" style="font-size:18px">Miembros</h2><ul class="lista" id="mbs"><li class="vacio">Cargando…</li></ul></div></div>
-    <div class="tarjeta" style="margin-top:16px"><h2 class="tit" style="font-size:18px">Promociones del club</h2>
+    <div class="tarjeta"><h2 class="tit" style="font-size:18px">Promociones del club</h2>
       <p class="sub">Solo las ven los miembros en su tarjeta. Quien no es miembro ve cuántas hay, como motivo para unirse.</p>
       <ul class="lista" id="prs"></ul>
-      <form id="fp" novalidate style="margin-top:12px"><div class="campo"><label for="pt">Promoción</label><input id="pt" maxlength="60" placeholder="Masaje + facial"></div>
+      <form id="fp" novalidate style="margin-top:12px"><div class="campo"><label for="pt">Promoción</label><input id="pt" maxlength="60" placeholder="Masaje y facial"></div>
         <div class="campo"><label for="pd">Detalle</label><input id="pd" maxlength="140" placeholder="Los dos por B/. 45"></div>
         <div class="campo"><label for="ph">Válida hasta (opcional)</label><input id="ph" type="date"></div>
-        <p class="error" id="perr"></p><button class="btn claro ancho" id="pgo">Agregar promoción</button></form></div>`;
+        <p class="error" id="perr"></p><button class="btn claro ancho" id="pgo">Agregar promoción</button></form></div></div>
+    <div class="tarjeta" style="margin-top:18px"><h2 class="tit" style="font-size:18px">Miembros</h2><div class="filtros" id="vfil"></div>
+      <input id="vbus" placeholder="Buscar por nombre o WhatsApp" style="margin-bottom:6px"><ul class="lista" id="mbs"><li class="vacio">Cargando…</li></ul></div>`;
   pintarPromos();
   $('#fp').onsubmit = async (ev) => {
     ev.preventDefault(); $('#perr').textContent = '';
@@ -389,8 +410,38 @@ async function vip() {
     catch (e) { $('#err').textContent = msg(e); }
     $('#go').disabled = false;
   };
+  $('#vbus').oninput = pintarVip;
   listaVip();
 }
+let MIEMBROS = [], FILTRO_V = null;
+async function listaVip() {
+  try { MIEMBROS = await rpc('vip_lista'); pintarVip(); }
+  catch (e) { $('#mbs').innerHTML = `<li class="vacio">${esc(msg(e))}</li>`; }
+}
+function pintarVip() {
+  const V = NEG.config.vip || {};
+  const est = (m) => (!m.activo ? 'vencida' : m.dias !== null && m.dias <= 7 ? 'pronto' : 'activa');
+  const F = {
+    pronto: { t: 'Vencen pronto', ok: (e) => e === 'pronto', vacio: 'Ninguna vence esta semana.' },
+    vencidas: { t: 'Vencidas', ok: (e) => e === 'vencida', vacio: 'No hay membresías vencidas.' },
+    activas: { t: 'Activas', ok: (e) => e !== 'vencida', vacio: 'No hay miembros activos.' },
+    todas: { t: 'Todas', ok: () => true, vacio: 'Todavía no hay miembros.' },
+  };
+  if (!FILTRO_V) FILTRO_V = MIEMBROS.some((m) => est(m) === 'pronto') ? 'pronto' : 'activas';
+  $('#vfil').innerHTML = Object.entries(F).map(([k, f]) => `<button class="${k === FILTRO_V ? 'on' : ''}" onclick="FILTRO_V='${k}';pintarVip()">${f.t}<i>${MIEMBROS.filter((m) => f.ok(est(m))).length}</i></button>`).join('');
+  const q = ($('#vbus').value || '').toLowerCase().trim();
+  const L = MIEMBROS.filter((m) => F[FILTRO_V].ok(est(m)) && (!q || m.nombre.toLowerCase().includes(q) || m.tel.includes(q.replace(/\D/g, '') || '§')));
+  $('#mbs').innerHTML = L.length ? L.map((m) => {
+    const e = est(m);
+    const txt = e !== 'vencida' ? `Hola ${m.nombre.split(' ')[0]}, tu membresía del ${V.nombre || 'club'} vence el ${fechaCorta(m.hasta)}. ¿Te la renovamos en tu próxima visita?`
+      : `Hola ${m.nombre.split(' ')[0]}, extrañamos verte en el ${V.nombre || 'club'}. Si quieres retomar tu membresía, te la activamos en tu próxima visita.`;
+    return `<li><div class="av">${esc(m.nombre.trim()[0])}</div><div class="info"><b>${esc(m.nombre)}</b>
+      <span>${e !== 'vencida' ? (m.hasta ? 'hasta el ' + fechaCorta(m.hasta) : 'sin vencimiento') : 'venció el ' + fechaCorta(m.hasta)} · ${m.usos} ${m.usos === 1 ? 'visita' : 'visitas'} con beneficio</span></div>
+      <span class="estado ${e}">${e === 'vencida' ? 'Vencida' : e === 'pronto' ? (m.dias === 0 ? 'Vence hoy' : `Vence en ${m.dias} d`) : 'Activa'}</span>
+      ${e !== 'activa' ? `<a class="wa" style="min-height:36px;padding:0 10px" target="_blank" rel="noopener" href="https://wa.me/${waNum(m.tel)}?text=${encodeURIComponent(txt)}">${e === 'pronto' ? 'Recordar' : 'WhatsApp'}</a>` : ''}</li>`;
+  }).join('') : `<li class="vacio">${q ? 'No hay resultados.' : F[FILTRO_V].vacio}</li>`;
+}
+
 function pintarPromos() {
   const P = NEG.config.promos || [], hoy = new Date().toISOString().slice(0, 10);
   $('#prs').innerHTML = P.length ? P.map((x, i) => `<li><div class="info"><b>${esc(x.titulo)}</b><span>${esc(x.detalle || '')}${x.hasta ? ' · ' + (x.hasta < hoy ? 'terminó el ' : 'hasta el ') + fechaCorta(x.hasta) : ''}</span></div>
@@ -402,20 +453,6 @@ async function guardarPromos(lista) {
 }
 function quitarPromo(i) { const P = [...(NEG.config.promos || [])]; P.splice(i, 1); guardarPromos(P); }
 
-async function listaVip() {
-  try {
-    const L = await rpc('vip_lista'); const V = NEG.config.vip || {};
-    $('#mbs').innerHTML = L.length ? L.map((m) => {
-      const pronto = m.activo && m.dias !== null && m.dias <= 7;
-      const txt = m.activo ? `Hola ${m.nombre.split(' ')[0]}, tu membresía del ${V.nombre || 'club'} vence el ${fechaCorta(m.hasta)}. ¿Te la renovamos en tu próxima visita?`
-        : `Hola ${m.nombre.split(' ')[0]}, extrañamos verte en el ${V.nombre || 'club'}. Si quieres retomar tu membresía, te la activamos en tu próxima visita.`;
-      return `<li><div class="av">${esc(m.nombre.trim()[0])}</div><div class="info"><b>${esc(m.nombre)}</b>
-        <span>${m.activo ? (m.hasta ? 'hasta el ' + fechaCorta(m.hasta) : 'sin vencimiento') : 'venció el ' + fechaCorta(m.hasta)} · ${m.usos} ${m.usos === 1 ? 'visita' : 'visitas'} con beneficio</span></div>
-        <span class="estado ${m.activo ? 'activa' : 'usada'}">${m.activo ? (pronto ? `Vence en ${m.dias} d` : 'Activa') : 'Vencida'}</span>
-        ${pronto || !m.activo ? `<a class="wa" style="min-height:36px;padding:0 10px" target="_blank" rel="noopener" href="https://wa.me/${waNum(m.tel)}?text=${encodeURIComponent(txt)}">WhatsApp</a>` : ''}</li>`;
-    }).join('') : '<li class="vacio">Todavía no hay miembros.</li>';
-  } catch (e) { $('#mbs').innerHTML = `<li class="vacio">${esc(msg(e))}</li>`; }
-}
 
 function waNum(t) { t = String(t || '').replace(/\D/g, ''); return t.length <= 8 ? '507' + t : t; }
 function textoRegalo(para, de, link) {

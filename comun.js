@@ -88,3 +88,30 @@ function fechaCorta(iso) {
 const dinero = (n) => 'B/. ' + Number(n || 0).toFixed(2).replace(/\.00$/, '');
 const telBonito = (t) => (t || '').replace(/^(\d{4})(\d{4})$/, '$1-$2');
 const LOTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5c2.1 2.6 2.1 6.9 0 9.5-2.1-2.6-2.1-6.9 0-9.5z"/><path d="M12 14c-2.6-.4-5.8-2.6-6.8-6.3 3.2.2 5.9 2.2 6.8 6.3z"/><path d="M12 14c2.6-.4 5.8-2.6 6.8-6.3-3.2.2-5.9 2.2-6.8 6.3z"/><path d="M4 16.5c2.4 1.8 5 2.5 8 2.5s5.6-.7 8-2.5"/></svg>';
+
+/* Actualización automática: si hay una versión publicada más nueva que la que está abierta
+   (por ejemplo, la tarjeta guardada en la pantalla de inicio), la página se recarga sola. */
+(function () {
+  const meta = document.querySelector('meta[name="kata-version"]');
+  if (!meta || !document.currentScript) return;
+  const actual = meta.content, url = new URL('version.json', document.currentScript.src);
+  let revisando = false;
+  async function revisar() {
+    if (revisando || document.hidden || document.querySelector('.velo, .canje, .escena')) return;
+    if ([...document.querySelectorAll('input:not([type=radio]):not([type=checkbox]):not([type=date]), textarea')].some((i) => i.value.trim())) return;
+    revisando = true;
+    try {
+      const r = await fetch(url.href + '?t=' + Date.now(), { cache: 'no-store' });
+      const { v } = await r.json();
+      let intento = null; try { intento = sessionStorage.getItem('kata-v'); } catch (e) {}
+      if (v && v !== actual && intento !== v) {
+        try { sessionStorage.setItem('kata-v', v); } catch (e) {}
+        const u = new URL(location.href); u.searchParams.set('v', v); location.replace(u.href);
+      }
+    } catch (e) {}
+    revisando = false;
+  }
+  revisar();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) revisar(); });
+  setInterval(revisar, 10 * 60 * 1000);
+})();
