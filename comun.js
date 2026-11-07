@@ -50,6 +50,7 @@ const MENSAJES = {
   vip_cuota: 'La membresía se activa en recepción.',
   vip: 'El club no está disponible.',
   vip_hoy: 'El beneficio VIP ya se aplicó hoy.',
+  promo: 'Puedes tener hasta 6 promociones.',
   no_cliente: 'Ese WhatsApp todavía no tiene tarjeta. Primero el cliente la crea escaneando el QR del mostrador.',
 };
 const msg = (e) => MENSAJES[e.code] || 'Algo no funcionó. Revisa tu conexión e intenta de nuevo.';

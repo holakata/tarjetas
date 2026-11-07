@@ -71,6 +71,7 @@
   .puntos i { width: 8px; height: 8px; border-radius: 50%; background: var(--linea); }
   .puntos i.on { background: var(--marca); }
   .chip { font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: var(--fondo-marca); color: var(--marca-2); white-space: nowrap; }
+  .wa.redondo { width: 42px; min-height: 42px; padding: 0; border-radius: 50%; flex: none; } .wa.redondo svg { width: 22px; height: 22px; }
   .wa { display: inline-flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 14px; border-radius: 12px; background: #1F8F55; color: #fff; font-weight: 600; font-size: 14px; text-decoration: none; white-space: nowrap; }
   .seccion { margin-bottom: 18px; }
   .seccion h3 { font-size: 16px; margin-bottom: 4px; }
@@ -89,7 +90,7 @@
   .estado.activa { background: #E3F2EA; color: var(--ok); }
   .estado.usada { background: #EEE; color: #666; }
   .estado.pronto { background: #FDF0DC; color: #9A5B00; } .estado.vencida { background: #FBE7E5; color: #A23A2F; }
-  .filtros { display: flex; gap: 8px; overflow-x: auto; margin: 4px 0 10px; scrollbar-width: none; }
+  .filtros { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 12px; }
   .filtros::-webkit-scrollbar { display: none; }
   .filtros button { border: 1px solid var(--linea); background: #fff; color: var(--tinta-2); font: inherit; font-size: 14px; font-weight: 600; padding: 8px 12px; border-radius: 999px; white-space: nowrap; cursor: pointer; min-height: 38px; }
   .filtros button.on { background: var(--marca-2); border-color: var(--marca-2); color: #fff; }
@@ -292,25 +293,35 @@ async function clientes() {
   const lejos = DATOS.lista.filter((c) => c.dias_sin_venir !== null && c.dias_sin_venir >= 30);
   const fila = (c, accion = '') => `<li style="cursor:pointer" onclick="if(!event.target.closest('a')){ir('canjear').then(()=>abrirFicha('${c.tel}'))}"><div class="av">${esc(c.nombre.trim()[0])}</div><div class="info"><b>${esc(c.nombre)}</b>
       <span>${telBonito(c.tel)} · ${c.ultima ? 'última visita ' + fechaCorta(c.ultima) : 'sin visitas'}</span></div>
-      ${c.vip ? '<span class="chip" style="background:#23262B;color:#D6B680">VIP</span>' : ''}${c.premios_listos > 0 ? '<span class="chip">Premio listo</span>' : `<div class="puntos">${Array.from({ length: meta }, (_, i) => `<i class="${i < c.sellos ? 'on' : ''}"></i>`).join('')}</div>`}${accion}</li>`;
+      ${c.vip ? '<span class="chip" style="background:#23262B;color:#D6B680">VIP</span>' : ''}${c.premios_listos > 0 ? '<span class="chip">Premio listo</span>' : accion ? '' : `<div class="puntos">${Array.from({ length: meta }, (_, i) => `<i class="${i < c.sellos ? 'on' : ''}"></i>`).join('')}</div>`}${accion}</li>`;
   const waTxt = (c, tipo) => {
     const n = c.nombre.split(' ')[0], link = `${BASE}t/?n=${NEG.slug}`;
     const t = tipo === 'cumple'
       ? `Hola ${n}, feliz cumpleaños de parte de ${NEG.nombre}. Este mes tienes un regalo esperándote en tu tarjeta: ${link}`
       : `Hola ${n}, te extrañamos en ${NEG.nombre}. Tu tarjeta va en ${c.sellos} de ${meta} sellos. ¿Te agendamos esta semana?`;
-    return `<a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(c.tel)}?text=${encodeURIComponent(t)}">WhatsApp</a>`;
+    return `<a class="wa redondo" aria-label="Escribir por WhatsApp" target="_blank" rel="noopener" href="https://wa.me/${waNum(c.tel)}?text=${encodeURIComponent(t)}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2a9.7 9.7 0 0 0-8.4 14.6L2.3 21.8l5.1-1.3A9.7 9.7 0 1 0 12 2.2zm0 17.7c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 19.9zm4.4-6c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8.9c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1l-.5-.3z"/></svg></a>`;
   };
+  const G = {
+    todos: { t: 'Todos', l: DATOS.lista, vacio: 'Todavía no hay clientes.' },
+    cumple: { t: 'Cumpleaños de ' + MESES[mes - 1], l: cumple, wa: 'cumple', vacio: 'Nadie cumple años este mes.', nota: 'Escríbeles para felicitarlos. Su regalo ya aparece en su tarjeta.' },
+    lejos: { t: 'No vienen hace 30 días', l: lejos, wa: 'lejos', vacio: 'Todos han venido en el último mes.', nota: 'Un mensaje a tiempo los hace volver. El botón deja el texto listo.' },
+    premio: { t: 'Premio listo', l: DATOS.lista.filter((c) => c.premios_listos > 0), vacio: 'Nadie tiene premio pendiente.', nota: 'Recuérdales su premio cuando vengan.' },
+    vip: { t: 'Club', l: DATOS.lista.filter((c) => c.vip), vacio: 'Todavía no hay miembros.' },
+  };
+  let grupo = 'todos';
   $('#cont').innerHTML = `<div class="stats"><div class="stat"><b>${DATOS.clientes}</b><span>clientes con tarjeta</span></div>
       <div class="stat"><b>${DATOS.sellos_mes}</b><span>sellos este mes</span></div><div class="stat"><b>${DATOS.premios_mes}</b><span>premios entregados este mes</span></div></div>
-    ${cumple.length ? `<div class="tarjeta seccion"><h3>Cumpleaños de ${MESES[mes - 1]}</h3><ul class="lista">${cumple.map((c) => fila(c, waTxt(c, 'cumple'))).join('')}</ul></div>` : ''}
-    ${lejos.length ? `<div class="tarjeta seccion"><h3>Hace más de 30 días que no vienen</h3><ul class="lista">${lejos.map((c) => fila(c, waTxt(c, 'lejos'))).join('')}</ul></div>` : ''}
-    <div class="tarjeta"><h3 style="font-size:16px;margin-bottom:10px">Todos los clientes</h3><input id="bus" placeholder="Buscar por nombre o WhatsApp" style="margin-bottom:6px">
-      <ul class="lista" id="todos"></ul></div>`;
-  const pintar = (q = '') => {
-    const f = DATOS.lista.filter((c) => !q || c.nombre.toLowerCase().includes(q) || c.tel.includes(q.replace(/\D/g, '') || '§'));
-    $('#todos').innerHTML = f.length ? f.map((c) => fila(c)).join('') : '<li class="vacio">Todavía no hay clientes.</li>';
+    <div class="tarjeta"><div class="filtros" id="gru"></div><p class="nota oculto" id="gnota" style="margin:2px 0 8px"></p>
+      <input id="bus" placeholder="Buscar por nombre o WhatsApp" style="margin-bottom:6px"><ul class="lista" id="todos"></ul></div>`;
+  const pintar = () => {
+    const q = $('#bus').value.toLowerCase().trim(), g = G[grupo];
+    $('#gru').innerHTML = Object.entries(G).filter(([k, x]) => k === 'todos' || x.l.length).map(([k, x]) => `<button class="${k === grupo ? 'on' : ''}" data-g="${k}">${x.t}<i>${x.l.length}</i></button>`).join('');
+    $$('#gru button').forEach((b) => (b.onclick = () => { grupo = b.dataset.g; pintar(); }));
+    $('#gnota').textContent = g.nota || ''; $('#gnota').classList.toggle('oculto', !g.nota);
+    const f = g.l.filter((c) => !q || c.nombre.toLowerCase().includes(q) || c.tel.includes(q.replace(/\D/g, '') || '§'));
+    $('#todos').innerHTML = f.length ? f.map((c) => fila(c, g.wa ? waTxt(c, g.wa) : '')).join('') : `<li class="vacio">${q ? 'No hay resultados.' : g.vacio}</li>`;
   };
-  pintar(); $('#bus').oninput = (e) => pintar(e.target.value.toLowerCase().trim());
+  pintar(); $('#bus').oninput = pintar;
 }
 
 /* ---------- Tarjetas de regalo ---------- */
@@ -358,7 +369,20 @@ async function vip() {
       <div class="campo"><label for="vm">Tiempo</label><select id="vm"><option value="1">1 mes</option><option value="3">3 meses</option><option value="6">6 meses</option><option value="12">1 año</option></select></div>
       <p class="error" id="err"></p><button class="btn ancho" id="go">Activar o renovar</button></form>
       <p class="nota" style="margin-top:14px">Beneficios: ${(V.beneficios || []).map(esc).join(' · ')}</p></div>
-    <div class="tarjeta"><h2 class="tit" style="font-size:18px">Miembros</h2><ul class="lista" id="mbs"><li class="vacio">Cargando…</li></ul></div></div>`;
+    <div class="tarjeta"><h2 class="tit" style="font-size:18px">Miembros</h2><ul class="lista" id="mbs"><li class="vacio">Cargando…</li></ul></div></div>
+    <div class="tarjeta" style="margin-top:16px"><h2 class="tit" style="font-size:18px">Promociones del club</h2>
+      <p class="sub">Solo las ven los miembros en su tarjeta. Quien no es miembro ve cuántas hay, como motivo para unirse.</p>
+      <ul class="lista" id="prs"></ul>
+      <form id="fp" novalidate style="margin-top:12px"><div class="campo"><label for="pt">Promoción</label><input id="pt" maxlength="60" placeholder="Masaje + facial"></div>
+        <div class="campo"><label for="pd">Detalle</label><input id="pd" maxlength="140" placeholder="Los dos por B/. 45"></div>
+        <div class="campo"><label for="ph">Válida hasta (opcional)</label><input id="ph" type="date"></div>
+        <p class="error" id="perr"></p><button class="btn claro ancho" id="pgo">Agregar promoción</button></form></div>`;
+  pintarPromos();
+  $('#fp').onsubmit = async (ev) => {
+    ev.preventDefault(); $('#perr').textContent = '';
+    if (!$('#pt').value.trim()) { $('#perr').textContent = 'Escribe el nombre de la promoción.'; return; }
+    await guardarPromos([...(NEG.config.promos || []), { titulo: $('#pt').value, detalle: $('#pd').value, hasta: $('#ph').value || null }]) && $('#fp').reset();
+  };
   $('#f').onsubmit = async (ev) => {
     ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
     try { const r = await rpc('vip_activar', { p_tel: $('#vt').value, p_meses: +$('#vm').value }); toast(`${r.nombre}: activa hasta el ${fechaCorta(r.hasta)}`, 'ok'); $('#f').reset(); listaVip(); }
@@ -367,6 +391,17 @@ async function vip() {
   };
   listaVip();
 }
+function pintarPromos() {
+  const P = NEG.config.promos || [], hoy = new Date().toISOString().slice(0, 10);
+  $('#prs').innerHTML = P.length ? P.map((x, i) => `<li><div class="info"><b>${esc(x.titulo)}</b><span>${esc(x.detalle || '')}${x.hasta ? ' · ' + (x.hasta < hoy ? 'terminó el ' : 'hasta el ') + fechaCorta(x.hasta) : ''}</span></div>
+    <button class="enlace" onclick="quitarPromo(${i})">Quitar</button></li>`).join('') : '<li class="vacio">Todavía no hay promociones.</li>';
+}
+async function guardarPromos(lista) {
+  try { NEG.config.promos = await rpc('promos_guardar', { p_promos: lista }); pintarPromos(); toast('Promociones actualizadas', 'ok'); return true; }
+  catch (e) { toast(msg(e), 'mal'); return false; }
+}
+function quitarPromo(i) { const P = [...(NEG.config.promos || [])]; P.splice(i, 1); guardarPromos(P); }
+
 async function listaVip() {
   try {
     const L = await rpc('vip_lista'); const V = NEG.config.vip || {};
