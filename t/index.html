@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261108203818">
+<meta name="kata-version" content="20261108204430">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#075F7A" data-marca>
 <title>Mi tarjeta</title>
@@ -329,7 +329,7 @@ async function cargarQR() {
   } catch (e) { qrTimer = setTimeout(cargarQR, 15000); }
 }
 
-function huella(E) { return [E.sellos, E.premios_listos, E.visitas.length, E.visitas[0] && E.visitas[0].fecha, !!E.cumple_regalo, E.vip && E.vip.miembro, E.vip && E.vip.hasta].join('|'); }
+function huella(E) { return [E.visitas[0] && E.visitas[0].sellos, E.sellos, E.premios_listos, E.visitas.length, E.visitas[0] && E.visitas[0].fecha, !!E.cumple_regalo, E.vip && E.vip.miembro, E.vip && E.vip.hasta].join('|'); }
 function vigilar() {
   clearInterval(vigia);
   vigia = setInterval(async () => {
@@ -337,7 +337,8 @@ function vigilar() {
     const e = await rpc('cliente_estado', { p_key: store.get(CLAVE) }).catch(() => null);
     if (!e || huella(e) === huella(ESTADO)) return;
     const antes = ESTADO; ESTADO = e;
-    const nueva = (e.visitas[0] && e.visitas[0].fecha) !== (antes.visitas[0] && antes.visitas[0].fecha);
+    const nueva = (e.visitas[0] && e.visitas[0].fecha) !== (antes.visitas[0] && antes.visitas[0].fecha)
+      || (e.visitas[0] && antes.visitas[0] && e.visitas[0].sellos > antes.visitas[0].sellos);
     pintar(nueva);
     if (e.premios_listos > antes.premios_listos) celebrar('Completaste tu tarjeta. Tu premio está listo.');
     else if (nueva) { try { navigator.vibrate && navigator.vibrate([18, 40, 18]); } catch (er) {} }
