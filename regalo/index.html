@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261107225338">
+<meta name="kata-version" content="20261108203818">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Tarjeta de regalo</title>
@@ -92,7 +92,7 @@ async function cargar() {
     R = await rpc('regalo_ver', { p_codigo: codigoRegalo });
     if (!R) { $('#vista').innerHTML = '<p class="cargando">No encontramos esta tarjeta de regalo.</p>'; return; }
     aplicarMarca(R.negocio.config, R.negocio.slug); document.title = 'Tarjeta de regalo · ' + R.negocio.nombre;
-    if (R.estado === 'activa' && !store.get('kata-regalo-abierto-' + codigoRegalo)) return sobre();
+    if (R.estado === 'activa' && (params.get('sobre') || !store.get('kata-regalo-abierto-' + codigoRegalo))) return sobre();
     pintar();
   } catch (e) { $('#vista').innerHTML = `<p class="cargando">${esc(msg(e))}</p>`; }
 }
