@@ -70,11 +70,9 @@ h1{font-family:"Playfair Display",serif;font-weight:600;font-size:40px;line-heig
 .logo img{width:100%;max-width:260px;display:block;margin:0 auto}
 .foot{display:block;text-align:center;color:#8a7d76;font-size:12px;margin-top:28px;letter-spacing:.5px}.foot b{color:var(--gold);font-weight:600}
 
-.vbtn{width:100%;margin-top:14px;cursor:pointer;color:inherit;font:inherit;text-align:left}
-#vmodal{position:fixed;inset:0;z-index:40;background:#000;display:none;align-items:center;justify-content:center}
-#vmodal.on{display:flex}
-#vmodal video{width:100%;height:100%;object-fit:contain;background:#000}
-#vclose{position:absolute;z-index:2;top:calc(14px + env(safe-area-inset-top));right:14px;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.5);color:#fff;font-size:18px;cursor:pointer}
+.promo{display:flex;align-items:center;gap:14px;margin-top:4px;padding:14px 18px;border-radius:16px;border:1px dashed rgba(201,168,106,.6);background:rgba(201,168,106,.07);font-size:13px;line-height:1.4;color:var(--mute)}
+.promo b{color:var(--ink);font-weight:600}
+.promo .pct{font-family:"Playfair Display",serif;font-size:34px;color:var(--gold);line-height:1}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,120px);background:var(--cream);color:#1a1414;padding:12px 18px;border-radius:999px;font-size:13px;font-weight:600;transition:transform .35s ease,opacity .35s;opacity:0;z-index:30;white-space:nowrap}
 .toast.show{transform:translate(-50%,0);opacity:1}
 .reveal{opacity:0;transform:translateY(16px);transition:opacity .7s ease,transform .7s ease}
@@ -102,7 +100,11 @@ h1{font-family:"Playfair Display",serif;font-weight:600;font-size:40px;line-heig
         <span><div class="l1">Guardar contacto</div><div class="l2">6419-1983 · directo a tu teléfono</div></span>
         <span class="arr">›</span>
       </a>
-      <a class="btn" href="https://wa.me/50764191983?text=Hola%20Bavrak%2C%20quiero%20consultar%20disponibilidad%20para%20mi%20evento." target="_blank" rel="noopener">
+      <div class="promo" id="promo">
+        <span class="pct">15%</span>
+        <span><b>de descuento</b><br>en eventos reservados hasta el 31 de diciembre</span>
+      </div>
+      <a class="btn" href="https://wa.me/50764191983?text=Hola%20Bavrak%2C%20quiero%20consultar%20disponibilidad%20para%20mi%20evento%20con%20la%20promoci%C3%B3n%20del%2015%25." target="_blank" rel="noopener">
         <span class="ic"><svg viewBox="0 0 24 24" fill="#c9a86a"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1-.7-.3-2.2-1-3-2.7-.2-.4.2-.4.6-1.2.1-.1 0-.3 0-.4l-.8-1.9c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3c-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 5 4.3 1.9.7 2.6.8 3.5.7.6-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg></span>
         <span><div class="l1">Consultar disponibilidad</div><div class="l2">Cotiza tu evento por WhatsApp</div></span>
         <span class="arr">›</span>
@@ -145,22 +147,16 @@ h1{font-family:"Playfair Display",serif;font-weight:600;font-size:40px;line-heig
       <img src="foto2.jpg" alt="Bavrak Bustamante" loading="lazy">
     </figure>
 
-    <button class="btn vbtn reveal" id="vopen">
-      <span class="ic"><svg viewBox="0 0 24 24" fill="#c9a86a"><path d="M8 5v14l11-7z"/></svg></span>
-      <span style="text-align:left"><div class="l1">Ver video</div><div class="l2">Escúchalo en vivo</div></span>
-      <span class="arr">›</span>
-    </button>
-
     <div class="logo reveal"><img src="logo.png" alt="BK Sax · Bavrak Bustamante"></div>
     <a class="foot" href="https://instagram.com/holakata.pa" target="_blank" rel="noopener">Tarjeta digital por <b>@holakata.pa</b></a>
   </div>
 </main>
 
-<div id="vmodal" aria-hidden="true"><button id="vclose" aria-label="Cerrar">✕</button><video id="v" playsinline controls preload="none" poster="portada.jpg"></video></div>
 <div class="toast" id="toast">Abre el archivo para guardar el contacto</div>
 
 <script>
 (function(){
+  if(new Date()>new Date("2027-01-01T00:00:00-05:00")){var pr=document.getElementById("promo");if(pr)pr.remove();}
 
   var tabs=document.querySelectorAll('.tabs button');
   tabs.forEach(function(b){b.addEventListener('click',function(){
