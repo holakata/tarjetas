@@ -262,21 +262,25 @@ function ficha(f) {
   const meta = f.meta, V = f.vip, llenos = f.premios_listos > 0 && f.sellos === 0 ? meta : f.sellos;
   const fila = (titulo, detalle, boton, hecho) => `<div class="accion"><div><b>${titulo}</b><span>${detalle}</span></div>${hecho ? `<span class="hecho-chip">${hecho}</span>` : boton}</div>`;
   let acc = fila('Visita de hoy', `${llenos} de ${meta} sellos`, `<button class="btn" onclick="accion('${f.codigo}','visita')">Sumar visita</button>`, f.hoy_sellado ? 'Ya sumada hoy' : '');
-  if (V && V.miembro) acc += fila(esc(V.nombre), (V.beneficios || []).map(esc).join(' · '), `<button class="btn" style="background:#23262B;color:#D6B680" onclick="accion('${f.codigo}','vip')">Aplicar beneficio</button>`, f.vip_hoy ? 'Aplicado hoy' : '');
+  if (V && V.miembro) {
+    acc += fila(esc(V.nombre), (V.beneficios || []).filter((b) => /descuento/i.test(b)).map(esc).join(' · ') || (V.beneficios || []).map(esc).join(' · '), `<button class="btn" style="background:#23262B;color:#D6B680" onclick="accion('${f.codigo}','vip')">Aplicar descuento</button>`, f.vip_hoy ? 'Aplicado hoy' : '');
+    (V.incluidos || []).forEach((x) => (acc += fila('Incluido del mes', esc(x.item), `<button class="btn" style="background:#23262B;color:#D6B680" onclick="accion('${f.codigo}','incluido',${esc(JSON.stringify(x.item))})">Entregar</button>`, x.usado ? 'Ya usado este mes' : '')));
+  }
+  if (f.detalles_listos > 0) acc += fila('Descuento de la visita ' + f.detalle_en, esc(f.detalle || ''), `<button class="btn marca" onclick="accion('${f.codigo}','detalle')">Aplicar 50 %</button>`);
   if (f.premios_listos > 0) acc += fila('Premio listo', esc(f.premio || ''), `<button class="btn marca" onclick="accion('${f.codigo}','premio')">Entregar premio</button>`);
-  if (f.cumple_regalo) acc += fila('Mes de cumpleaños', esc(f.cumple_regalo), `<button class="btn marca" onclick="accion('${f.codigo}','cumple')">Entregar regalo</button>`);
+  if (f.cumple_regalo) acc += fila('Cumpleaños' + (f.cumple_hasta && f.cumple_hasta !== hoyPty() ? ' (vale hasta el ' + fechaCorta(f.cumple_hasta) + ')' : ' (vale hoy)'), esc(f.cumple_regalo), `<button class="btn marca" onclick="accion('${f.codigo}','cumple')">Entregar regalo</button>`);
   $('#res').innerHTML = `<div class="tarjeta resultado"><span class="tipo">${V && V.miembro ? 'Miembro ' + esc(V.nombre) + (V.hasta ? ' · hasta el ' + fechaCorta(V.hasta) : '') : 'Cliente'}</span>
     <h3>${esc(f.nombre)}</h3><p class="det">${telBonito(f.tel)} · ${f.total_visitas} ${f.total_visitas === 1 ? 'visita' : 'visitas'} · cliente desde ${fechaCorta(f.cliente_desde)}</p>
     <div class="puntos" style="margin-bottom:14px">${Array.from({ length: meta }, (_, i) => `<i class="${i < llenos ? 'on' : ''}"></i>`).join('')}</div>
-    ${acc}${V && !V.miembro ? `<p class="nota" style="margin-top:12px">${V.vencida ? 'Su membresía del ' + esc(V.nombre) + ' venció.' : 'No es miembro del ' + esc(V.nombre) + '.'} <button class="enlace" onclick="ir('vip').then(()=>{$('#vt').value='${f.tel}'})">${V.vencida ? 'Renovar' : 'Activar'}</button></p>` : ''}
+    ${acc}<p class="nota" style="margin-top:10px">Solo suma sello en compras nuevas. No suma si paga con premio, descuento, cumpleaños, tarjeta de regalo o lo incluido del club.</p>${V && !V.miembro ? `<p class="nota" style="margin-top:12px">${V.vencida ? 'Su membresía del ' + esc(V.nombre) + ' venció.' : 'No es miembro del ' + esc(V.nombre) + '.'} <button class="enlace" onclick="ir('vip').then(()=>{$('#vt').value='${f.tel}'})">${V.vencida ? 'Renovar' : 'Activar'}</button></p>` : ''}
     <div class="acciones" style="margin-top:16px"><a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(f.tel)}?text=${encodeURIComponent(`Hola ${f.nombre.split(' ')[0]}, aquí tienes tu tarjeta de ${NEG.nombre}: ${BASE}t/?n=${NEG.slug} . Guárdala para ver tus sellos y beneficios.`)}">Enviarle su tarjeta por WhatsApp</a>
     <button class="btn claro" style="min-height:40px;flex:1" onclick="nuevoCliente()">Siguiente cliente</button></div></div>`;
 }
-async function accion(cod, a) {
+async function accion(cod, a, item) {
   $$('.accion .btn').forEach((b) => (b.disabled = true));
   try {
-    const f = await rpc('ficha_accion', { p_codigo: cod, p_accion: a });
-    toast({ visita: 'Visita sumada', vip: 'Beneficio VIP aplicado', premio: 'Premio entregado', cumple: 'Regalo entregado' }[a], 'ok');
+    const f = await rpc('ficha_accion', { p_codigo: cod, p_accion: a, p_item: item || null });
+    toast({ visita: 'Visita sumada', vip: 'Descuento del club aplicado', premio: 'Premio entregado', cumple: 'Regalo entregado', detalle: '50 % aplicado', incluido: 'Entregado: ' + item }[a], 'ok');
     ficha(f);
   } catch (e) { toast(msg(e), 'mal'); $$('.accion .btn').forEach((b) => (b.disabled = false)); }
 }
@@ -298,7 +302,7 @@ async function buscar(cod) {
       titulo = k.cliente; det = (k.hasta ? 'Miembro activo hasta el ' + fechaCorta(k.hasta) : 'Miembro activo') + ' · ' + telBonito(k.tel);
       extra = `<ul style="margin:0 0 16px 18px;color:var(--tinta-2)">${(k.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
     } else { titulo = k.cliente; det = k.detalle + ' · ' + telBonito(k.tel); }
-    const et = { premio: 'Premio de sellos', cumple: 'Regalo de cumpleaños', regalo: 'Tarjeta de regalo', vip: (NEG.config.vip && NEG.config.vip.nombre) || 'Club VIP' }[k.tipo];
+    const et = { premio: 'Premio de sellos', detalle: 'Descuento de la visita 4', cumple: 'Regalo de cumpleaños', regalo: 'Tarjeta de regalo', vip: (NEG.config.vip && NEG.config.vip.nombre) || 'Club VIP' }[k.tipo];
     $('#res').innerHTML = `<div class="tarjeta resultado"><span class="tipo">${et}</span><h3>${esc(titulo)}</h3><p class="det">${esc(det)}</p>${extra}
       <button class="btn ancho" id="conf">${k.tipo === 'vip' ? 'Aplicar beneficio' : 'Confirmar entrega'}</button><button class="enlace" style="width:100%;margin-top:6px" onclick="nuevoCliente()">Cancelar</button></div>`;
     $('#conf').onclick = async () => {
@@ -328,14 +332,14 @@ async function clientes() {
     const n = c.nombre.split(' ')[0], link = `${BASE}t/?n=${NEG.slug}`;
     const club = (NEG.config.vip || {}).nombre || 'club';
     const t = tipo === 'cumple'
-      ? (c.vip ? `Hola ${n}, feliz cumpleaños de parte de ${NEG.nombre}. Como miembro del ${club}, este mes tienes tu regalo de cumpleaños esperándote. ¿Te agendamos?`
+      ? (NEG.config.cumple_activo && !NEG.config.cumple_solo_vip || c.vip ? `Hola ${n}, feliz cumpleaños de parte de ${NEG.nombre}. El día de tu cumpleaños te regalamos un ${(NEG.config.cumple_regalo || 'regalo').toLowerCase()} (si cae lunes, cualquier día de esa semana). ¿Te agendamos?`
         : `Hola ${n}, feliz cumpleaños de parte de todo el equipo de ${NEG.nombre}. Que tengas un año lleno de bienestar. Te esperamos pronto.`)
       : `Hola ${n}, te extrañamos en ${NEG.nombre}. Tu tarjeta va en ${c.sellos} de ${meta} sellos. ¿Te agendamos esta semana?`;
     return `<a class="wa redondo" aria-label="Escribir por WhatsApp" target="_blank" rel="noopener" href="https://wa.me/${waNum(c.tel)}?text=${encodeURIComponent(t)}"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2a9.7 9.7 0 0 0-8.4 14.6L2.3 21.8l5.1-1.3A9.7 9.7 0 1 0 12 2.2zm0 17.7c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 19.9zm4.4-6c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8.9c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1l-.5-.3z"/></svg></a>`;
   };
   const G = {
     todos: { t: 'Todos', l: DATOS.lista, vacio: 'Todavía no hay clientes.' },
-    cumple: { t: 'Cumpleaños de ' + MESES[mes - 1], l: cumple, wa: 'cumple', vacio: 'Nadie cumple años este mes.', nota: 'Escríbeles para felicitarlos. Su regalo ya aparece en su tarjeta.' },
+    cumple: { t: 'Cumpleaños de ' + MESES[mes - 1], l: cumple, wa: 'cumple', vacio: 'Nadie cumple años este mes.', nota: 'Escríbeles para agendar su regalo. Les aparece en su tarjeta el día de su cumpleaños (si cae lunes, toda esa semana).' },
     lejos: { t: 'No vienen hace 30 días', l: lejos, wa: 'lejos', vacio: 'Todos han venido en el último mes.', nota: 'Un mensaje a tiempo los hace volver. El botón deja el texto listo.' },
     premio: { t: 'Premio listo', l: DATOS.lista.filter((c) => c.premios_listos > 0), vacio: 'Nadie tiene premio pendiente.', nota: 'Recuérdales su premio cuando vengan.' },
     vip: { t: 'Club', l: DATOS.lista.filter((c) => c.vip), vacio: 'Todavía no hay miembros.' },
@@ -362,13 +366,13 @@ async function clientes() {
 
 /* ---------- Tarjetas de regalo ---------- */
 async function regalos() {
-  const vence = new Date(Date.now() + 90 * 864e5).toISOString().slice(0, 10);
+  const vd = new Date(); vd.setMonth(vd.getMonth() + 3); const vence = vd.toISOString().slice(0, 10);
   const serv = (NEG.config.servicios || []).map((s) => `<option>${esc(s)}</option>`).join('');
-  $('#cont').innerHTML = `<div class="grid2"><div class="tarjeta"><h2 class="tit">Nueva tarjeta de regalo</h2><p class="sub">Llénala cuando alguien la compre. Se crea sola y la mandas por WhatsApp.</p>
+  $('#cont').innerHTML = `<div class="grid2"><div class="tarjeta"><h2 class="tit">Nueva tarjeta de regalo</h2><p class="sub">Llénala cuando alguien la compre (pago en recepción, Yappy o transferencia). Escribe el monto que pidió el cliente. Vale 3 meses.</p>
     <form id="f" novalidate>
-      <div class="tipos"><label><input type="radio" name="tp" value="servicio" checked><span>Un servicio</span></label><label><input type="radio" name="tp" value="monto"><span>Un monto</span></label></div>
-      <div class="campo" id="cServ"><label for="sv">Servicio</label><input id="sv" list="servs" placeholder="Ej. Masaje relajante de 60 minutos"><datalist id="servs">${serv}</datalist></div>
-      <div class="campo oculto" id="cMto"><label for="mt">Monto (B/.)</label><input id="mt" inputmode="decimal" placeholder="50"></div>
+      <div class="tipos"><label><input type="radio" name="tp" value="monto" checked><span>Un monto</span></label><label><input type="radio" name="tp" value="servicio"><span>Un servicio</span></label></div>
+      <div class="campo oculto" id="cServ"><label for="sv">Servicio</label><input id="sv" list="servs" placeholder="Ej. Masaje relajante de 60 minutos"><datalist id="servs">${serv}</datalist></div>
+      <div class="campo" id="cMto"><label for="mt">Monto (B/.)</label><input id="mt" inputmode="decimal" placeholder="50"></div>
       <div class="fila"><div class="campo"><label for="pa">Para</label><input id="pa" placeholder="Mamá"></div><div class="campo"><label for="de">De</label><input id="de" placeholder="Andrea"></div></div>
       <div class="campo"><label for="wt">WhatsApp de quien la recibe</label><input id="wt" inputmode="tel" placeholder="6000-0000"><p class="nota" style="margin-top:6px">Si quien la compra prefiere mandarla él, pon su número.</p></div>
       <div class="campo"><label for="ms">Mensaje (opcional)</label><textarea id="ms" maxlength="180" placeholder="Para que te consientas un rato."></textarea></div>
@@ -384,7 +388,7 @@ async function regalos() {
         p_monto: tipo === 'monto' ? parseFloat(($('#mt').value || '').replace(',', '.')) : null, p_vence: $('#vc').value || null, p_tel: $('#wt').value || null });
       const link = `${BASE}regalo/?g=${r.codigo}`, para = $('#pa').value.trim();
       const txt = textoRegalo(para, $('#de').value.trim(), link);
-      $('#f').reset(); $('#vc').value = vence; $('#cServ').classList.remove('oculto'); $('#cMto').classList.add('oculto');
+      $('#f').reset(); $('#vc').value = vence; $('#cServ').classList.add('oculto'); $('#cMto').classList.remove('oculto');
       $('#hecho').innerHTML = `<div class="creado"><b>Lista la tarjeta para ${esc(para)}</b><div class="link">${esc(link)}</div>
         <div class="acciones">${r.tel ? `<a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(r.tel)}?text=${encodeURIComponent(txt)}">Enviar a ${esc(telBonito(r.tel))}</a>` : ''}
         <a class="${r.tel ? 'btn claro' : 'wa'}" style="min-height:40px" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">${r.tel ? 'Enviar a otro número' : 'Enviar por WhatsApp'}</a>
@@ -400,11 +404,12 @@ async function regalos() {
 async function vip() {
   const V = NEG.config.vip || {};
   $('#cont').innerHTML = `<div class="grid2"><div class="tarjeta"><h2 class="tit">${esc(V.nombre || 'Club VIP')}</h2>
-      <p class="sub">${+V.cuota > 0 ? dinero(V.cuota) + ' al ' + esc(V.periodo || 'mes') + '. ' : ''}Cuando un cliente pague, actívalo aquí con su WhatsApp. Lo ve al momento en su tarjeta.</p>
+      <p class="sub">${(V.niveles || []).length ? '' : +V.cuota > 0 ? dinero(V.cuota) + ' al ' + esc(V.periodo || 'mes') + '. ' : ''}Cuando un cliente pague, actívalo aquí con su WhatsApp. Lo ve al momento en su tarjeta.</p>
       <form id="f" novalidate><div class="campo"><label for="vt">WhatsApp del cliente</label><input id="vt" inputmode="tel" placeholder="6000-0000"></div>
+      ${(V.niveles || []).length ? `<div class="campo"><label for="vn">Nivel</label><select id="vn">${V.niveles.map((n) => `<option value="${esc(n.id)}">${esc(n.nombre)} · ${dinero(n.cuota)} al ${esc(V.periodo || 'mes')}</option>`).join('')}</select></div>` : ''}
       <div class="campo"><label for="vm">Tiempo</label><select id="vm"><option value="1">1 mes</option><option value="3">3 meses</option><option value="6">6 meses</option><option value="12">1 año</option></select></div>
       <p class="error" id="err"></p><button class="btn ancho" id="go">Activar o renovar</button></form>
-      <p class="nota" style="margin-top:14px">Beneficios: ${(V.beneficios || []).map(esc).join(' · ')}</p></div>
+      ${(V.niveles || []).length ? V.niveles.map((n) => `<p class="nota" style="margin-top:12px"><b>${esc(n.nombre)}:</b> ${(n.beneficios || []).map(esc).join(' · ')}</p>`).join('') : `<p class="nota" style="margin-top:14px">Beneficios: ${(V.beneficios || []).map(esc).join(' · ')}</p>`}</div>
     <div class="tarjeta"><h2 class="tit" style="font-size:18px">Promociones del club</h2>
       <p class="sub">Solo las ven los miembros en su tarjeta. Quien no es miembro ve cuántas hay, como motivo para unirse.</p>
       <ul class="lista" id="prs"></ul>
@@ -422,7 +427,7 @@ async function vip() {
   };
   $('#f').onsubmit = async (ev) => {
     ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
-    try { const r = await rpc('vip_activar', { p_tel: $('#vt').value, p_meses: +$('#vm').value }); toast(`${r.nombre}: activa hasta el ${fechaCorta(r.hasta)}`, 'ok'); $('#f').reset(); listaVip(); }
+    try { const r = await rpc('vip_activar', { p_tel: $('#vt').value, p_meses: +$('#vm').value, p_nivel: $('#vn') ? $('#vn').value : null }); toast(`${r.nombre}: activa hasta el ${fechaCorta(r.hasta)}`, 'ok'); $('#f').reset(); listaVip(); }
     catch (e) { $('#err').textContent = msg(e); }
     $('#go').disabled = false;
   };
@@ -449,10 +454,10 @@ function pintarVip() {
   const L = MIEMBROS.filter((m) => F[FILTRO_V].ok(est(m)) && (!q || m.nombre.toLowerCase().includes(q) || m.tel.includes(q.replace(/\D/g, '') || '§')));
   $('#mbs').innerHTML = L.length ? L.map((m) => {
     const e = est(m);
-    const txt = e !== 'vencida' ? `Hola ${m.nombre.split(' ')[0]}, tu membresía del ${V.nombre || 'club'} vence el ${fechaCorta(m.hasta)}. ¿Te la renovamos en tu próxima visita?`
+    const txt = e !== 'vencida' ? `Hola ${m.nombre.split(' ')[0]}, tu membresía ${esc(m.nivel || V.nombre || 'del club')} vence el ${fechaCorta(m.hasta)}. ¿Te la renovamos en tu próxima visita?`
       : `Hola ${m.nombre.split(' ')[0]}, extrañamos verte en el ${V.nombre || 'club'}. Si quieres retomar tu membresía, te la activamos en tu próxima visita.`;
     return `<li><div class="av">${esc(m.nombre.trim()[0])}</div><div class="info"><b>${esc(m.nombre)}</b>
-      <span>${e !== 'vencida' ? (m.hasta ? 'hasta el ' + fechaCorta(m.hasta) : 'sin vencimiento') : 'venció el ' + fechaCorta(m.hasta)} · ${m.usos} ${m.usos === 1 ? 'visita' : 'visitas'} con beneficio</span></div>
+      <span>${m.nivel ? esc(m.nivel) + ' · ' : ''}${e !== 'vencida' ? (m.hasta ? 'hasta el ' + fechaCorta(m.hasta) : 'sin vencimiento') : 'venció el ' + fechaCorta(m.hasta)} · ${m.usos} ${m.usos === 1 ? 'beneficio usado' : 'beneficios usados'}</span></div>
       <span class="estado ${e}">${e === 'vencida' ? 'Vencida' : e === 'pronto' ? (m.dias === 0 ? 'Vence hoy' : `Vence en ${m.dias} d`) : 'Activa'}</span>
       ${e !== 'activa' ? `<a class="wa" style="min-height:36px;padding:0 10px" target="_blank" rel="noopener" href="https://wa.me/${waNum(m.tel)}?text=${encodeURIComponent(txt)}">${e === 'pronto' ? 'Recordar' : 'WhatsApp'}</a>` : ''}</li>`;
   }).join('') : `<li class="vacio">${q ? 'No hay resultados.' : F[FILTRO_V].vacio}</li>`;

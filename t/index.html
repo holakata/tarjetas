@@ -65,6 +65,7 @@
   .s { aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed rgba(255,255,255,.45); display: grid; place-items: center; }
   .s.on { border: 0; background: #fff; color: var(--marca-2); box-shadow: 0 4px 10px rgba(0,0,0,.15); }
   .s.on svg { width: 52%; height: 52%; }
+  .s.det { border-style: solid; border-color: rgba(255,255,255,.85); font-size: 12px; font-weight: 700; color: #fff; }
   .s.meta { border-style: solid; border-color: rgba(255,255,255,.85); }
   .s.meta svg { width: 50%; height: 50%; color: #fff; opacity: .9; }
   .s.nuevo { animation: pop .7s cubic-bezier(.3,1.7,.5,1); }
@@ -235,7 +236,7 @@ async function sumar(key) {
   try {
     const r = await rpc('sumar_sello', { p_key: key, p_token: tokenQR });
     ESTADO = r.estado; limpiarURL(); pintar(true);
-    celebrar(r.premio_nuevo ? 'Completaste tu tarjeta. Tu premio está listo.' : r.sumados > 1 ? 'Hoy tu visita vale doble: +2 sellos' : 'Sello agregado. Gracias por volver.');
+    celebrar(r.premio_nuevo ? 'Completaste tu tarjeta. Tu premio está listo.' : r.detalle_nuevo ? 'Visita sumada. Tu 50 % de descuento está listo.' : r.sumados > 1 ? 'Hoy tu visita vale doble: +2 sellos' : 'Sello agregado. Gracias por volver.');
   } catch (e) { limpiarURL(); pintar(); toast(msg(e), e.code === 'hoy' ? '' : 'mal'); }
 }
 
@@ -250,6 +251,7 @@ function pintar(animar = false) {
   for (let i = 1; i <= meta; i++) {
     if (i <= llenos) celdas += `<div class="s on${animar && i === llenos ? ' nuevo' : ''}">${I.check}</div>`;
     else if (i === meta) celdas += `<div class="s meta">${I.regalo}</div>`;
+    else if (i === E.detalle_en) celdas += `<div class="s det">50%</div>`;
     else celdas += `<div class="s"></div>`;
   }
   const vipActivo = !!(V && V.miembro), giraSellos = recep() && !vipActivo, giraVip = recep() && vipActivo;
@@ -267,6 +269,7 @@ function pintar(animar = false) {
 
   const avisos = [];
   if (E.premios_listos > 0) avisos.push(`<button class="aviso brilla" onclick="hojaPremio('premio')"><span class="ic">${I.regalo}</span><span><b>Tu premio está listo</b><span>${esc(E.premio || '')}</span></span><span class="fl">${I.fl}</span></button>`);
+  if (E.detalles_listos > 0) avisos.push(`<button class="aviso brilla" onclick="hojaPremio('detalle')"><span class="ic">${I.regalo}</span><span><b>Tu descuento está listo</b><span>${esc(E.detalle || '')}</span></span><span class="fl">${I.fl}</span></button>`);
   if (E.cumple_regalo) avisos.push(`<button class="aviso brilla" onclick="hojaPremio('cumple')"><span class="ic">${I.pastel}</span><span><b>Feliz cumpleaños, ${esc(E.nombre.split(' ')[0])}</b><span>${esc(E.cumple_regalo)}</span></span><span class="fl">${I.fl}</span></button>`);
 
   const pct = Math.round((llenos / meta) * 100);
@@ -285,7 +288,7 @@ function pintar(animar = false) {
       ${avisos.length ? `<div class="avisos">${avisos.join('')}</div>` : ''}
       ${wa ? `<a class="agendar" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent('Hola, soy ' + E.nombre + '. Quisiera agendar una cita.')}"><span class="ic">${I.wa}</span><span><b>Agendar cita</b><span>Escríbenos por WhatsApp</span></span><span class="fl">${I.fl}</span></a>
         <a class="regalar" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent('Hola, soy ' + E.nombre + '. Quisiera comprar una tarjeta de regalo.')}"><span class="ic">${I.regalo}</span><span><b>Regalar una visita</b><span>Tarjeta de regalo para alguien especial</span></span><span class="fl">${I.fl}</span></a>` : ''}
-      ${V && !V.miembro ? `<button class="club-inv" onclick="hojaClub()"><span class="ic">${I.corona}</span><span><b>${esc(V.nombre)}</b><span>${PR.length ? PR.length + (PR.length === 1 ? ' promoción' : ' promociones') + ' para miembros' : (+V.cuota > 0 ? dinero(V.cuota) + ' al ' + esc(V.periodo || 'mes') : 'Ver beneficios')}</span></span><span class="fl">${I.fl}</span></button>` : ''}
+      ${V && !V.miembro ? `<button class="club-inv" onclick="hojaClub()"><span class="ic">${I.corona}</span><span><b>${esc(V.nombre)}</b><span>${PR.length ? PR.length + (PR.length === 1 ? ' promoción' : ' promociones') + ' para miembros' : (+V.cuota > 0 ? ((V.niveles || []).length > 1 ? 'Desde ' : '') + dinero(V.cuota) + ' al ' + esc(V.periodo || 'mes') : 'Ver beneficios')}</span></span><span class="fl">${I.fl}</span></button>` : ''}
       ${promos}
       <p class="guardar-l"><button class="enlace" onclick="hojaGuardar()">${I.cel} Guardar en mi celular</button></p>
     </div>`;
@@ -329,7 +332,7 @@ async function cargarQR() {
   } catch (e) { qrTimer = setTimeout(cargarQR, 15000); }
 }
 
-function huella(E) { return [E.visitas[0] && E.visitas[0].sellos, E.sellos, E.premios_listos, E.visitas.length, E.visitas[0] && E.visitas[0].fecha, !!E.cumple_regalo, E.vip && E.vip.miembro, E.vip && E.vip.hasta].join('|'); }
+function huella(E) { return [E.visitas[0] && E.visitas[0].sellos, E.sellos, E.premios_listos, E.detalles_listos, E.vip && E.vip.nivel, JSON.stringify(E.vip && E.vip.incluidos), E.visitas.length, E.visitas[0] && E.visitas[0].fecha, !!E.cumple_regalo, E.vip && E.vip.miembro, E.vip && E.vip.hasta].join('|'); }
 function vigilar() {
   clearInterval(vigia);
   vigia = setInterval(async () => {
@@ -341,8 +344,10 @@ function vigilar() {
       || (e.visitas[0] && antes.visitas[0] && e.visitas[0].sellos > antes.visitas[0].sellos);
     pintar(nueva);
     if (e.premios_listos > antes.premios_listos) celebrar('Completaste tu tarjeta. Tu premio está listo.');
+    else if (e.detalles_listos > antes.detalles_listos) celebrar('Visita sumada. Tu 50 % de descuento está listo.');
     else if (nueva) { try { navigator.vibrate && navigator.vibrate([18, 40, 18]); } catch (er) {} }
     else if (e.premios_listos < antes.premios_listos) celebrar('Premio entregado. Disfrútalo.');
+    else if (e.detalles_listos < antes.detalles_listos) celebrar('Descuento aplicado. Disfrútalo.');
     else if (antes.cumple_regalo && !e.cumple_regalo) celebrar('Regalo de cumpleaños entregado.');
     else if (e.vip && e.vip.miembro && !(antes.vip && antes.vip.miembro)) celebrar('Ya eres parte del ' + e.vip.nombre + '.');
   }, 4000);
@@ -373,16 +378,21 @@ function hojaPromo(i) {
 }
 function hojaClub() {
   const V = ESTADO.vip, ben = `<ul class="lista-b" style="margin-top:10px">${(V.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
-  if (V.miembro) return hoja(`<h3>${esc(V.nombre)}</h3><p class="nota">${V.hasta ? 'Tu membresía está activa hasta el ' + fechaCorta(V.hasta) + '.' : 'Tu membresía está activa.'}</p>${ben}
+  const inc = (V.incluidos || []).length ? `<p style="margin-top:14px;font-weight:600">Incluido este mes</p><ul class="lista-b">${V.incluidos.map((x) => `<li>${esc(x.item)}: ${x.usado ? 'ya lo usaste' : 'disponible'}</li>`).join('')}</ul>` : '';
+  if (V.miembro) return hoja(`<h3>${esc(V.nombre)}</h3><p class="nota">${V.hasta ? 'Tu membresía está activa hasta el ' + fechaCorta(V.hasta) + '.' : 'Tu membresía está activa.'}</p>${ben}${inc}
     <p class="nota" style="margin-top:12px">${recep() ? 'Al pagar, di tu número en recepción y aplican tus beneficios.' : 'Muestra tu tarjeta del club en recepción.'}</p>${btnCerrar()}`);
   const gratis = !(+V.cuota > 0), PR = promosVigentes();
+  if ((V.niveles || []).length) return hoja(`<h3>${esc(V.club || V.nombre)}</h3><p class="nota">${V.vencida ? 'Tu membresía venció. Renuévala en recepción y sigue con tus beneficios.' : 'Escoge tu nivel. Se paga cada ' + esc(V.periodo || 'mes') + ' en recepción y lo activan en tu tarjeta al momento.'}</p>
+    ${V.niveles.map((n) => `<div class="nivel"><div class="precio" style="margin-top:16px">${esc(n.nombre)} · ${dinero(n.cuota)} <span>al ${esc(V.periodo || 'mes')}</span></div>${n.lema ? `<p class="nota">${esc(n.lema)}</p>` : ''}<ul class="lista-b">${(n.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul></div>`).join('')}${btnCerrar('Cerrar')}`);
   const extra = PR.length ? `<p class="nota" style="margin-top:14px">Este mes los miembros tienen:</p><ul class="lista-b">${PR.map((x) => `<li>${esc(x.titulo)}</li>`).join('')}</ul>` : '';
   hoja(`<h3>${esc(V.nombre)}</h3><p class="nota">${V.vencida ? 'Tu membresía venció. Renuévala en recepción y sigue con tus beneficios.' : 'Beneficios para los clientes de siempre.'}</p>${ben}${extra}
     ${gratis ? '<button class="btn ancho" style="margin-top:16px" onclick="unirse()">Unirme al club</button>' : `<div class="precio">${dinero(V.cuota)} <span>al ${esc(V.periodo || 'mes')}</span></div><p class="nota" style="margin-top:6px">Pídelo en recepción y lo activan en tu tarjeta al momento.</p>`}${btnCerrar('Cerrar')}`);
 }
 function hojaPremio(tipo) {
-  const E = ESTADO, t = tipo === 'cumple' ? 'Tu regalo de cumpleaños' : 'Tu premio';
-  const d = tipo === 'cumple' ? E.cumple_regalo + '. Es tuyo durante todo este mes.' : (E.premio || '') + '.';
+  const E = ESTADO, t = { cumple: 'Tu regalo de cumpleaños', detalle: 'Tu descuento' }[tipo] || 'Tu premio';
+  const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Panama' });
+  const d = tipo === 'cumple' ? E.cumple_regalo + (E.cumple_hasta && E.cumple_hasta !== hoy ? '. Puedes usarlo hasta el ' + fechaCorta(E.cumple_hasta) + '.' : '. Es para hoy, el día de tu cumpleaños.')
+    : tipo === 'detalle' ? (E.detalle || '') + '. Úsalo en tu próxima compra.' : (E.premio || '') + (/ o /.test(E.premio || '') ? '. Tú escoges.' : '.');
   if (!recep()) return pedir(tipo);
   hoja(`<h3>${t}</h3><p class="nota">${esc(d)}</p><ul class="pasos" style="margin-top:12px"><li><i>1</i>Pídelo en recepción cuando vengas.</li><li><i>2</i>Di tu número de WhatsApp.</li><li><i>3</i>Te lo entregan y aquí se marca solo.</li></ul>${btnCerrar()}`);
 }
@@ -407,14 +417,14 @@ async function unirse() {
 async function pedir(tipo) {
   try {
     const r = await rpc('canje_pedir', { p_key: store.get(CLAVE), p_tipo: tipo });
-    const t = { cumple: 'Tu regalo de cumpleaños', vip: ESTADO.vip ? ESTADO.vip.nombre : 'Club', premio: 'Tu premio' }[tipo];
+    const t = { cumple: 'Tu regalo de cumpleaños', detalle: 'Tu descuento', vip: ESTADO.vip ? ESTADO.vip.nombre : 'Club', premio: 'Tu premio' }[tipo];
     const v = hoja(`<div id="hc"><h3 style="text-align:center">${esc(t)}</h3><p class="nota" style="text-align:center">Muestra esta pantalla en recepción.</p>
       <div class="qr">${qrSVG(r.codigo, 210)}</div><div class="codigo">${r.codigo}</div></div>${btnCerrar('Cerrar')}`);
     if (tipo === 'vip') return;
-    const antes = { p: ESTADO.premios_listos, c: !!ESTADO.cumple_regalo };
+    const antes = { p: ESTADO.premios_listos, d: ESTADO.detalles_listos, c: !!ESTADO.cumple_regalo };
     sondeo = setInterval(async () => {
       const e = await rpc('cliente_estado', { p_key: store.get(CLAVE) }).catch(() => null);
-      if (e && ((tipo === 'premio' && e.premios_listos < antes.p) || (tipo === 'cumple' && antes.c && !e.cumple_regalo))) {
+      if (e && ((tipo === 'premio' && e.premios_listos < antes.p) || (tipo === 'detalle' && e.detalles_listos < antes.d) || (tipo === 'cumple' && antes.c && !e.cumple_regalo))) {
         clearInterval(sondeo); ESTADO = e;
         $('#hc', v).innerHTML = `<div class="hecho"><div class="circ">${I.check.replace('<svg', '<svg width="36" height="36"')}</div><h3>Listo, disfrútalo</h3><p class="nota">Recepción ya lo marcó como usado.</p></div>`;
       }
@@ -426,7 +436,7 @@ async function pedir(tipo) {
 function bienvenida() {
   const c = NEG.config, meta = c.meta || 6;
   let celdas = '';
-  for (let i = 1; i <= meta; i++) celdas += i === meta ? `<div class="s meta">${I.regalo}</div>` : `<div class="s${i <= 2 ? ' on' : ''}">${i <= 2 ? I.check : ''}</div>`;
+  for (let i = 1; i <= meta; i++) celdas += i === meta ? `<div class="s meta">${I.regalo}</div>` : i === c.detalle_en && i > 2 ? `<div class="s det">50%</div>` : `<div class="s${i <= 2 ? ' on' : ''}">${i <= 2 ? I.check : ''}</div>`;
   $('#vista').innerHTML = `<div style="height:26px"></div>
     <div class="wallet uno" style="pointer-events:none"><div class="pase"><div class="giro"><div class="cara sellos-f">
       <div class="f-top"><div><small>Tarjeta de cliente</small><b>Tu nombre</b></div><div class="cuenta">2<span> / ${meta}</span></div></div>
@@ -434,7 +444,7 @@ function bienvenida() {
       <div class="f-pie"><span>${esc(c.premio || '')}</span></div></div></div></div></div>
     <div class="cuerpo bienv">
       <h2>Tu tarjeta de cliente frecuente</h2>
-      <p>Cada visita suma un sello. Al completar ${meta} recibes: <b>${esc(c.premio || 'un premio')}</b>.</p>
+      <p>Cada compra suma un sello. Al completar ${meta} recibes: <b>${esc(c.premio || 'un premio')}</b>.${c.detalle_en ? ` En la visita ${c.detalle_en}: <b>${esc(c.detalle || '')}</b>.` : ''}${(c.dias_dobles || []).includes('3') ? ' Los miércoles tu visita vale doble.' : ''}</p>
       <button class="btn ancho" onclick="registro()">Crear mi tarjeta</button>
       <button class="btn claro ancho" style="margin-top:10px" onclick="recuperar()">Ya tengo tarjeta</button>
     </div>`;

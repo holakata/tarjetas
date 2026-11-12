@@ -49,7 +49,10 @@ const MENSAJES = {
   sin_vip: 'Esta membresía no está activa.',
   vip_cuota: 'La membresía se activa en recepción.',
   vip: 'El club no está disponible.',
-  vip_hoy: 'El beneficio VIP ya se aplicó hoy.',
+  vip_hoy: 'El descuento del club ya se aplicó hoy.',
+  incluido_usado: 'Ese servicio incluido ya se usó este mes.',
+  nivel: 'Escoge el nivel de la membresía.',
+  meses: 'Escoge el tiempo de la membresía.',
   promo: 'Puedes tener hasta 6 promociones.',
   no_cliente: 'Ese WhatsApp todavía no tiene tarjeta. Primero el cliente la crea escaneando el QR del mostrador.',
 };
