@@ -53,6 +53,9 @@ const MENSAJES = {
   incluido_usado: 'Ese servicio incluido ya se usó este mes.',
   nivel: 'Escoge el nivel de la membresía.',
   meses: 'Escoge el tiempo de la membresía.',
+  espera: 'Hay muchos registros seguidos. Espera unos minutos e intenta de nuevo.',
+  motivo: 'Escribe el motivo.',
+  regalo: 'Esa tarjeta de regalo no está activa.',
   promo: 'Puedes tener hasta 6 promociones.',
   no_cliente: 'Ese WhatsApp todavía no tiene tarjeta. Primero el cliente la crea escaneando el QR del mostrador.',
 };

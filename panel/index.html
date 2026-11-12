@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261112201058">
+<meta name="kata-version" content="20261112201652">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Acceso clientes · Kata Studio</title>
@@ -32,6 +32,15 @@
   .tab.on { color: var(--tinta); border-color: var(--marca); }
   .tab .c { display: none; }
   @media (max-width: 620px) { .tabs { gap: 0; padding: 0 4px; justify-content: space-between; } .tab { padding: 12px 8px; font-size: 14px; } .tab .l { display: none; } .tab .c { display: inline; } }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+  @media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--blanco); border-radius: 18px; padding: 16px; box-shadow: var(--sombra); }
+  .kpi b { font-family: "Gloock", serif; font-weight: 400; font-size: 32px; line-height: 1; display: block; }
+  .kpi span { font-size: 13px; color: var(--tinta-2); display: block; margin-top: 4px; }
+  .kpi em { font-style: normal; font-size: 12px; font-weight: 700; display: inline-block; margin-top: 8px; padding: 3px 8px; border-radius: 999px; background: #EEE; color: #666; }
+  .kpi em.sube { background: #E3F2EA; color: var(--ok); } .kpi em.baja { background: #FBE7E5; color: #A23A2F; }
+  .act-h { font-size: 12px; color: var(--tinta-2); white-space: nowrap; }
+  .peligro { color: #A23A2F; }
   .mini { font-size: 12px; font-weight: 700; color: var(--tinta-2); white-space: nowrap; }
   .chip.club { background: #23262B; color: #E3C27E; } .chip.bronze { background: #7A4D30; color: #FFF4EA; } .chip.platinum { background: #6E7680; color: #fff; } .chip.gold { background: #2A2215; color: #E3C27E; }
   .rg { flex-wrap: wrap; } .rg .rg-acc { display: flex; gap: 8px; align-items: center; margin-left: auto; }
@@ -61,6 +70,7 @@
   /* Canjear */
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+  .grid2 > * { min-width: 0; } .lista .info span { overflow-wrap: anywhere; }
   #lector { width: 100%; border-radius: 18px; overflow: hidden; background: #111; min-height: 260px; }
   #lector video { border-radius: 18px; }
   .codigo-in { font-family: ui-monospace, Menlo, monospace; letter-spacing: .25em; text-transform: uppercase; text-align: center; font-size: 22px; font-weight: 700; }
@@ -160,13 +170,14 @@ function login(error = '') {
 
 function marco() {
   $('#app').innerHTML = `<header class="barra"><div class="barra-in"><div class="mono${NEG.config.logo ? ' con-logo' : ''}">${NEG.config.logo ? `<img src="../${esc(NEG.config.logo)}" alt="">` : esc(NEG.nombre.trim()[0])}</div>
-    <div><h1>${esc(NEG.nombre)}</h1><p>Panel de recepción</p></div><button class="salir" onclick="salir()">Salir</button></div>
+    <div><h1>${esc(NEG.nombre)}</h1><p>${esc(NEG.yo || 'Panel de recepción')}</p></div><button class="salir" onclick="salir()">Salir</button></div>
     <nav class="tabs">
       ${MODO() === 'recepcion' ? '<button class="tab" data-t="canjear"><span class="l">Escanear cliente</span><span class="c">Escanear</span></button><button class="tab" data-t="mostrador"><span class="l">QR para crear tarjeta</span><span class="c">QR</span></button>'
         : `<button class="tab" data-t="mostrador"><span class="l">QR del mostrador</span><span class="c">QR</span></button><button class="tab" data-t="canjear">${MODO() === 'ambos' ? '<span class="l">Escanear cliente</span><span class="c">Escanear</span>' : 'Canjear'}</button>`}
       <button class="tab" data-t="clientes">Clientes</button>
       <button class="tab" data-t="regalos"><span class="l">Tarjetas de regalo</span><span class="c">Regalos</span></button>
-      <button class="tab" data-t="vip">${esc((NEG.config.vip && NEG.config.vip.nombre) || 'Club')}</button>
+      <button class="tab" data-t="vip"><span class="l">${esc((NEG.config.vip && NEG.config.vip.nombre) || 'Club')}</span><span class="c">Club</span></button>
+      ${DUENO() ? '<button class="tab" data-t="dueno">Resumen</button>' : ''}
     </nav></header><main class="cont" id="cont"></main>`;
   $$('.tab').forEach((b) => (b.onclick = () => ir(b.dataset.t)));
 }
@@ -178,10 +189,11 @@ async function ir(t) {
   $$('.tab').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
   clearTimeout(tTimer); clearInterval(cTimer); await detenerLector();
   document.body.classList.remove('full');
-  ({ mostrador, canjear, clientes, regalos, vip })[t]();
+  ({ mostrador, canjear, clientes, regalos, vip, dueno })[t]();
 }
 
 const MODO = () => (NEG && NEG.config.modo) || 'cliente';
+const DUENO = () => !!(NEG && NEG.rol === 'dueno');
 
 /* ---------- QR del mostrador ---------- */
 function mostrador() {
@@ -288,7 +300,8 @@ function ficha(f) {
     <div class="puntos" style="margin-bottom:14px">${Array.from({ length: meta }, (_, i) => `<i class="${i < llenos ? 'on' : ''}"></i>`).join('')}</div>
     ${acc}<p class="nota" style="margin-top:10px">Suma la visita solo si es una compra nueva.</p>${V && !V.miembro ? `<p class="nota" style="margin-top:12px">${V.vencida ? 'Su membresía del ' + esc(V.nombre) + ' venció.' : 'No es miembro del ' + esc(V.nombre) + '.'} <button class="enlace" onclick="ir('vip').then(()=>{$('#vt').value='${f.tel}'})">${V.vencida ? 'Renovar' : 'Activar'}</button></p>` : ''}
     <div class="acciones" style="margin-top:16px"><a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(f.tel)}?text=${encodeURIComponent(`Hola ${f.nombre.split(' ')[0]}, aquí tienes tu tarjeta de ${NEG.nombre}: ${BASE}t/?n=${NEG.slug} . Guárdala para ver tus sellos y beneficios.`)}">Enviarle su tarjeta por WhatsApp</a>
-    <button class="btn claro" style="min-height:40px;flex:1" onclick="nuevoCliente()">Siguiente cliente</button></div></div>`;
+    <button class="btn claro" style="min-height:40px;flex:1" onclick="nuevoCliente()">Siguiente cliente</button></div>
+    ${DUENO() ? `<p class="nota" style="margin-top:14px;text-align:center"><button class="enlace" onclick="corregirCliente('${f.tel}', ${esc(JSON.stringify(f.nombre))})">Corregir datos</button> · <button class="enlace peligro" onclick="borrarCliente('${f.tel}', ${esc(JSON.stringify(f.nombre))})">Borrar cliente</button></p>` : ''}</div>`;
 }
 async function accion(cod, a, item) {
   $$('.accion .btn').forEach((b) => (b.disabled = true));
@@ -427,7 +440,7 @@ async function vip() {
     <div class="tarjeta"><h2 class="tit" style="font-size:18px">Promociones del club</h2>
       <p class="sub">Solo las ven los miembros en su tarjeta.</p>
       <ul class="lista" id="prs"></ul>
-      <form id="fp" novalidate style="margin-top:12px"><div class="campo"><label for="pt">Promoción</label><input id="pt" maxlength="60" placeholder="Masaje y facial"></div>
+      <p class="nota${DUENO() ? ' oculto' : ''}" style="margin-top:10px">Las promociones las cambia el dueño.</p><form id="fp" class="${DUENO() ? '' : 'oculto'}" novalidate style="margin-top:12px"><div class="campo"><label for="pt">Promoción</label><input id="pt" maxlength="60" placeholder="Masaje y facial"></div>
         <div class="campo"><label for="pd">Detalle</label><input id="pd" maxlength="140" placeholder="Los dos por B/. 45"></div>
         <div class="campo"><label for="ph">Válida hasta (opcional)</label><input id="ph" type="date"></div>
         <p class="error" id="perr"></p><button class="btn claro ancho" id="pgo">Agregar promoción</button></form></div></div>
@@ -480,7 +493,7 @@ function pintarVip() {
 function pintarPromos() {
   const P = NEG.config.promos || [], hoy = new Date().toISOString().slice(0, 10);
   $('#prs').innerHTML = P.length ? P.map((x, i) => `<li><div class="info"><b>${esc(x.titulo)}</b><span>${esc(x.detalle || '')}${x.hasta ? ' · ' + (x.hasta < hoy ? 'terminó el ' : 'hasta el ') + fechaCorta(x.hasta) : ''}</span></div>
-    <button class="enlace" onclick="quitarPromo(${i})">Quitar</button></li>`).join('') : '<li class="vacio">Todavía no hay promociones.</li>';
+    ${DUENO() ? `<button class="enlace" onclick="quitarPromo(${i})">Quitar</button>` : ''}</li>`).join('') : '<li class="vacio">Todavía no hay promociones.</li>';
 }
 async function guardarPromos(lista) {
   try { NEG.config.promos = await rpc('promos_guardar', { p_promos: lista }); pintarPromos(); toast('Promociones actualizadas', 'ok'); return true; }
@@ -494,6 +507,47 @@ function textoRegalo(para, de, link) {
   return `Hola ${para}, ${de ? de + ' te regaló' : 'tienes'} una tarjeta de regalo de ${NEG.nombre}. Ábrela aquí: ${link}`;
 }
 let REGALOS = [], FILTRO_R = 'activas';
+/* ---------- Solo dueño ---------- */
+async function corregirCliente(tel, nombre) {
+  const n = prompt('Nombre del cliente', nombre); if (n === null) return;
+  const t = prompt('WhatsApp del cliente', telBonito(tel)); if (t === null) return;
+  try { const r = await rpc('cliente_editar', { p_tel: tel, p_nombre: n, p_tel_nuevo: t }); toast('Datos corregidos', 'ok'); abrirFicha(r.tel); } catch (e) { toast(msg(e), 'mal'); }
+}
+async function borrarCliente(tel, nombre) {
+  if (!confirm(`¿Borrar a ${nombre}? Se borran su tarjeta, sus sellos y su membresía. No se puede deshacer.`)) return;
+  try { await rpc('cliente_borrar', { p_tel: tel }); toast('Cliente borrado', 'ok'); nuevoCliente(); } catch (e) { toast(msg(e), 'mal'); }
+}
+async function anularRegalo(codigo, para) {
+  const m = prompt(`¿Por qué se anula la tarjeta de regalo para ${para}?`); if (m === null) return;
+  try { await rpc('regalo_anular', { p_codigo: codigo, p_motivo: m }); toast('Tarjeta anulada', 'ok'); listaRegalos(); } catch (e) { toast(msg(e), 'mal'); }
+}
+const ACCIONES = { visita: 'Sumó visita', premio: 'Entregó premio', detalle: 'Aplicó 50 %', cumple: 'Regalo de cumpleaños', vip: 'Descuento del club', incluido: 'Entregó incluido del club',
+  regalo_vendido: 'Vendió tarjeta de regalo', regalo_canjeado: 'Canjeó tarjeta de regalo', regalo_anulado: 'Anuló tarjeta de regalo', membresia_nueva: 'Membresía nueva', membresia_renovada: 'Renovó membresía',
+  membresia_quitada: 'Quitó membresía', cliente_nuevo: 'Cliente nuevo', cliente_editado: 'Corrigió datos', cliente_borrado: 'Borró cliente', promociones: 'Cambió promociones' };
+let RES = null, QUIEN = '';
+async function dueno() {
+  $('#cont').innerHTML = '<p class="cargando">Cargando…</p>';
+  try { RES = await rpc('dueno_resumen'); } catch (e) { $('#cont').innerHTML = `<p class="cargando">${esc(msg(e))}</p>`; return; }
+  const A = RES.este, B = RES.anterior, mes = MESES[new Date().getMonth()];
+  const k = (v, ant, t, din) => { const d = v - ant; const em = ant === 0 && v === 0 ? '' : `<em class="${d > 0 ? 'sube' : d < 0 ? 'baja' : ''}">${d > 0 ? '▲ ' : d < 0 ? '▼ ' : '= '}${din ? dinero(Math.abs(d)) : Math.abs(d)} vs mes pasado</em>`; return `<div class="kpi"><b>${din ? dinero(v) : v}</b><span>${t}</span>${em}</div>`; };
+  $('#cont').innerHTML = `<h2 class="tit">Resumen de ${mes}</h2><p class="sub">Del 1 hasta hoy, comparado con los mismos días del mes pasado.</p>
+    <div class="kpis">${k(A.visitas, B.visitas, 'visitas')}${k(A.nuevos, B.nuevos, 'clientes nuevos')}${k(A.volvieron, B.volvieron, 'clientes que volvieron')}${k(A.premios, B.premios, 'premios y 50 % entregados')}
+      ${k(A.regalos_n, B.regalos_n, 'tarjetas de regalo vendidas')}${k(+A.regalos_monto, +B.regalos_monto, 'en tarjetas de regalo', true)}${k(A.regalos_canjeados, B.regalos_canjeados, 'canjes de tarjetas de regalo')}${k(A.cumples, B.cumples, 'regalos de cumpleaños')}
+      ${k(A.miembros_nuevos, B.miembros_nuevos, 'miembros nuevos del club')}${k(A.renovados, B.renovados, 'membresías renovadas')}<div class="kpi"><b>${RES.miembros_activos}</b><span>miembros activos</span></div><div class="kpi"><b>${RES.sin_venir}</b><span>clientes sin venir hace 30 días</span></div></div>
+    <div class="grid2"><div class="tarjeta"><h2 class="tit" style="font-size:18px">Actividad</h2><p class="sub">Quién hizo qué y cuándo. Sirve para revisar si algo no cuadra.</p>
+      <div class="filtros" id="afil"></div><ul class="lista" id="alst"></ul></div>
+      <div class="tarjeta"><h2 class="tit" style="font-size:18px">Equipo</h2><ul class="lista">${RES.equipo.map((p) => `<li><div class="av">${esc(p.nombre.trim()[0])}</div><div class="info"><b>${esc(p.nombre)}</b><span>${esc(p.email)}</span></div><span class="chip">${p.rol === 'dueno' ? 'Dueño' : 'Recepción'}</span></li>`).join('')}</ul>
+      <p class="nota" style="margin-top:10px">Para agregar o quitar a alguien del equipo, escríbele a Kata Studio.</p></div></div>`;
+  pintarActividad();
+}
+function pintarActividad() {
+  const quienes = [...new Set(RES.actividad.map((a) => a.quien))];
+  $('#afil').innerHTML = ['', ...quienes].map((q) => `<button class="${q === QUIEN ? 'on' : ''}" onclick='QUIEN=${JSON.stringify(q)};pintarActividad()'>${esc(q || 'Todos')}</button>`).join('');
+  const L = RES.actividad.filter((a) => !QUIEN || a.quien === QUIEN);
+  $('#alst').innerHTML = L.length ? L.map((a) => { const d = new Date(a.creado); return `<li><div class="info"><b>${esc(ACCIONES[a.accion] || a.accion)}${a.cliente ? ' · ' + esc(a.cliente) : ''}</b>
+    <span>${esc(a.quien)}${a.detalle ? ' · ' + esc(a.detalle) : ''}${a.monto ? ' · ' + dinero(a.monto) : ''}</span></div><span class="act-h">${d.getDate()} ${MESES[d.getMonth()].slice(0, 3)} · ${d.toLocaleTimeString('es-PA', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Panama' })}</span></li>`; }).join('')
+    : '<li class="vacio">Todavía no hay actividad. Desde hoy queda registrado todo lo que se haga en el panel.</li>';
+}
 function hoyPty() { return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Panama' })).toISOString().slice(0, 10); }
 function situacion(g) {
   if (g.estado !== 'activa') return g.estado === 'anulada' ? 'anulada' : 'usada';
@@ -527,7 +581,7 @@ function pintarRegalos() {
       <span>${g.de ? 'De ' + esc(g.de) + ' · ' : ''}${g.tipo === 'servicio' ? esc(g.servicio) : 'quedan ' + dinero(g.saldo) + ' de ' + dinero(g.monto)} · ${cuando}</span></div>
       <div class="rg-acc"><span class="estado ${st === 'anulada' ? 'usada' : st}">${et}</span>
       ${g.tel && (st === 'activa' || st === 'pronto') ? `<a class="wa" style="min-height:36px;padding:0 10px" target="_blank" rel="noopener" href="https://wa.me/${waNum(g.tel)}?text=${encodeURIComponent(txt)}">${st === 'pronto' ? 'Recordar' : 'Reenviar'}</a>` : ''}
-      <a class="enlace" target="_blank" href="${BASE}regalo/?g=${g.codigo}">Ver</a></div></li>`;
+      <a class="enlace" target="_blank" href="${BASE}regalo/?g=${g.codigo}">Ver</a>${DUENO() && (st === 'activa' || st === 'pronto') ? `<button class="enlace peligro" onclick="anularRegalo('${g.codigo}', ${esc(JSON.stringify(g.para))})">Anular</button>` : ''}</div></li>`;
   }).join('') : `<li class="vacio">${vacio}</li>`;
 }
 

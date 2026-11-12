@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261112201058">
+<meta name="kata-version" content="20261112201652">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#075F7A" data-marca>
 <title>Mi tarjeta</title>
@@ -412,6 +412,14 @@ function hojaPremio(tipo) {
   if (!recep()) return pedir(tipo);
   hoja(`<h3>${t}</h3><p class="nota">${esc(d)}</p><ul class="pasos" style="margin-top:12px"><li><i>1</i>Pídelo en recepción cuando vengas.</li><li><i>2</i>Di tu número de WhatsApp.</li><li><i>3</i>Te lo entregan y aquí se marca solo.</li></ul>${btnCerrar()}`);
 }
+function hojaPrivacidad() {
+  hoja(`<h3>Tus datos</h3><ul class="lista-b" style="margin-top:10px">
+    <li>Guardamos tu nombre, tu WhatsApp y, si lo das, tu cumpleaños.</li>
+    <li>Los usamos solo para tu tarjeta y para escribirte sobre tus visitas, premios y promociones.</li>
+    <li>Solo los ve el personal de ${esc(NEG.nombre)}. No los vendemos ni los compartimos.</li>
+    <li>Puedes pedir que los corrijan o los borren cuando quieras, en recepción o por WhatsApp.</li></ul>
+    <p class="nota" style="margin-top:10px">Según la Ley 81 de 2019 de protección de datos personales de Panamá.</p>${btnCerrar('Entendido')}`);
+}
 function hojaGuardar() {
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const tel = String(ESTADO && ESTADO.tel || '').replace(/\D/g, ''), propio = tel.length === 8 ? '507' + tel : tel;
@@ -479,7 +487,7 @@ function registro() {
       <div class="campo"><label for="tel">Tu WhatsApp</label><input id="tel" inputmode="tel" autocomplete="tel" placeholder="6000-0000" required></div>
       <div class="campo"><label>Tu cumpleaños (opcional)</label><div class="fila"><select id="dia"><option value="">Día</option>${dias}</select><select id="mes"><option value="">Mes</option>${meses}</select></div></div>
       <div class="campo"><label for="pin">Crea un código de 4 números</label><input id="pin" class="pin" inputmode="numeric" maxlength="4" autocomplete="off" required><p class="nota" style="margin-top:6px">Te sirve para entrar a tu tarjeta desde otro celular.</p></div>
-      <label class="check"><input type="checkbox" id="ok"> Acepto que ${esc(NEG.nombre)} guarde mi nombre, WhatsApp y cumpleaños para esta tarjeta y para escribirme sobre mis visitas.</label>
+      <label class="check"><input type="checkbox" id="ok"> Acepto que ${esc(NEG.nombre)} guarde mi nombre, WhatsApp y cumpleaños para esta tarjeta y para escribirme sobre mis visitas. <button type="button" class="enlace" onclick="hojaPrivacidad()">Ver cómo se usan mis datos</button></label>
       <p class="error" id="err"></p>
       <button class="btn ancho" id="go">Crear mi tarjeta</button>
     </form>
