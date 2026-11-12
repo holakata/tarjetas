@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261112191523">
+<meta name="kata-version" content="20261112192530">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#075F7A" data-marca>
 <title>Mi tarjeta</title>
@@ -57,11 +57,13 @@
   .sellos-f::after { content: ""; position: absolute; right: -60px; bottom: -80px; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, var(--acento-glow, rgba(255,255,255,.15)), transparent 70%); pointer-events: none; }
   .f-top { display: flex; justify-content: space-between; align-items: flex-start; }
   .f-top small { font-size: 12px; opacity: .8; display: block; }
-  .f-top b { font-size: 18px; font-weight: 600; }
-  .cuenta { font-family: "Gloock", serif; font-size: 34px; line-height: 1; text-align: right; }
+  .f-top b { font-size: 18px; font-weight: 600; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .f-top > div:first-child { flex: 1; min-width: 0; }
+  .cuenta { font-family: "Gloock", serif; font-size: 34px; line-height: 1; text-align: right; flex: none; white-space: nowrap; margin-left: 12px; }
   .cuenta span { font-family: "Inst", sans-serif; font-size: 14px; opacity: .75; }
   .grid { margin-top: auto; display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
-  .grid.m8 { grid-template-columns: repeat(8, 1fr); } .grid.m10 { grid-template-columns: repeat(5, 1fr); }
+  .grid.m8 { grid-template-columns: repeat(8, 1fr); } .grid.m10 { grid-template-columns: repeat(5, minmax(0, 44px)); justify-content: space-between; gap: 8px; }
+  .f-pie > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .s { aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed rgba(255,255,255,.45); display: grid; place-items: center; }
   .s.on { border: 0; background: #fff; color: var(--marca-2); box-shadow: 0 4px 10px rgba(0,0,0,.15); }
   .s.on svg { width: 52%; height: 52%; }
@@ -77,12 +79,26 @@
 
   .vip-f { background: linear-gradient(155deg, #2A2C31 0%, #111214 100%); color: #F4EBDD; padding: 18px 20px; display: flex; flex-direction: column; }
   .vip-f::after { content: ""; position: absolute; right: -50px; top: -50px; width: 190px; height: 190px; border-radius: 50%; border: 1.5px solid rgba(214,182,128,.35); box-shadow: 0 0 0 26px rgba(214,182,128,.05); pointer-events: none; }
-  .vip-f small { color: #D6B680; font-size: 12px; }
+  .vip-f { --vacc: #D6B680; }
+  .vip-f.bronze { background: linear-gradient(155deg, #9A6440 0%, #5E3A22 100%); color: #FFF4EA; --vacc: #F3CBA6; }
+  .vip-f.platinum { background: linear-gradient(155deg, #8D959E 0%, #454B53 100%); color: #FFFFFF; --vacc: #F1F4F7; }
+  .vip-f.gold { background: linear-gradient(155deg, #3B3020 0%, #15120C 100%); color: #FBF3E2; --vacc: #E3C27E; }
+  .vip-f::after { border-color: var(--vacc) !important; opacity: .35; }
+  .vip-f small { color: var(--vacc); font-size: 12px; }
   .vip-f h3 { font-family: "Gloock", serif; font-weight: 400; font-size: 28px; line-height: 1.05; margin-top: 2px; }
   .vip-f .vig { font-size: 13px; opacity: .75; margin-top: 4px; }
-  .vip-f .renueva { color: #D6B680; opacity: 1; }
+  .vip-f .renueva { color: var(--vacc); opacity: 1; }
   .vip-f .ben { margin-top: auto; font-size: 13px; line-height: 1.55; }
-  .vip-f .ben span { display: block; } .vip-f .ben span::before { content: "·"; color: #D6B680; font-weight: 700; margin-right: 8px; }
+  .vip-f .ben span { display: block; } .vip-f .ben span::before { content: "·"; color: var(--vacc); font-weight: 700; margin-right: 8px; }
+  .nivel { border-radius: 18px; padding: 16px 18px; margin-top: 12px; color: #fff; background: linear-gradient(155deg, #3B3020, #15120C); --vacc: #E3C27E; }
+  .nivel.bronze { background: linear-gradient(155deg, #9A6440, #5E3A22); --vacc: #F3CBA6; }
+  .nivel.platinum { background: linear-gradient(155deg, #8D959E, #454B53); --vacc: #F1F4F7; }
+  .nivel .n-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .nivel .n-top b { font-family: "Gloock", serif; font-weight: 400; font-size: 22px; line-height: 1.1; }
+  .nivel .n-top span { font-weight: 700; font-size: 18px; white-space: nowrap; color: var(--vacc); } .nivel .n-top small { font-weight: 400; font-size: 12px; opacity: .85; }
+  .nivel p { font-size: 13px; opacity: .85; margin-top: 2px; }
+  .nivel ul { list-style: none; margin-top: 8px; font-size: 13px; line-height: 1.5; } .nivel li::before { content: "·"; color: var(--vacc); font-weight: 700; margin-right: 8px; }
+  .reglas { list-style: none; margin-top: 12px; display: grid; gap: 8px; } .reglas li { background: var(--blanco, #fff); border-radius: 14px; padding: 10px 14px; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.06); } .reglas b { color: var(--marca-2); }
   .vip-f .voltear { background: rgba(214,182,128,.18); color: #F4EBDD; }
 
   .puntos-n { display: flex; justify-content: center; gap: 6px; margin-top: -4px; }
@@ -262,7 +278,7 @@ function pintar(animar = false) {
         <div class="f-pie"><span>${esc(E.premio || '')}</span>${giraSellos ? `<span class="voltear">${I.qr}</span>` : ''}</div></div>
       ${giraSellos ? atras : ''}</div></div>`;
   const pVip = V && V.miembro ? `<div class="pase" id="p1"><div class="giro" onclick="voltear(this)">
-      <div class="cara vip-f"><small>Miembro</small><h3>${esc(V.nombre)}</h3><div class="vig">${vigencia(V)}</div>
+      <div class="cara vip-f ${esc(V.nivel || '')}"><small>Miembro</small><h3>${esc(V.nombre)}</h3><div class="vig">${vigencia(V)}</div>
         <div class="ben">${(V.beneficios || []).slice(0, 3).map((b) => `<span>${esc(b)}</span>`).join('')}</div>
         <div class="f-pie" style="justify-content:flex-end"><span class="voltear">${I.qr}</span></div></div>
       ${giraVip ? atras : ''}</div></div>` : '';
@@ -382,8 +398,8 @@ function hojaClub() {
   if (V.miembro) return hoja(`<h3>${esc(V.nombre)}</h3><p class="nota">${V.hasta ? 'Tu membresía está activa hasta el ' + fechaCorta(V.hasta) + '.' : 'Tu membresía está activa.'}</p>${ben}${inc}
     <p class="nota" style="margin-top:12px">${recep() ? 'Al pagar, di tu número en recepción y aplican tus beneficios.' : 'Muestra tu tarjeta del club en recepción.'}</p>${btnCerrar()}`);
   const gratis = !(+V.cuota > 0), PR = promosVigentes();
-  if ((V.niveles || []).length) return hoja(`<h3>${esc(V.club || V.nombre)}</h3><p class="nota">${V.vencida ? 'Tu membresía venció. Renuévala en recepción y sigue con tus beneficios.' : 'Escoge tu nivel. Se paga cada ' + esc(V.periodo || 'mes') + ' en recepción y lo activan en tu tarjeta al momento.'}</p>
-    ${V.niveles.map((n) => `<div class="nivel"><div class="precio" style="margin-top:16px">${esc(n.nombre)} · ${dinero(n.cuota)} <span>al ${esc(V.periodo || 'mes')}</span></div>${n.lema ? `<p class="nota">${esc(n.lema)}</p>` : ''}<ul class="lista-b">${(n.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul></div>`).join('')}${btnCerrar('Cerrar')}`);
+  if ((V.niveles || []).length) return hoja(`<h3>${esc(V.club || V.nombre)}</h3><p class="nota">${V.vencida ? 'Tu membresía venció. Renuévala en recepción y sigue con tus beneficios.' : 'Escoge tu nivel y pídelo en recepción. Se activa en tu tarjeta al momento.'}</p>
+    ${V.niveles.map((n) => `<div class="nivel ${esc(n.id)}"><div class="n-top"><b>${esc(n.nombre)}</b><span>${dinero(n.cuota)}<small> / ${esc(V.periodo || 'mes')}</small></span></div>${n.lema ? `<p>${esc(n.lema)}</p>` : ''}<ul>${(n.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul></div>`).join('')}${btnCerrar('Cerrar')}`);
   const extra = PR.length ? `<p class="nota" style="margin-top:14px">Este mes los miembros tienen:</p><ul class="lista-b">${PR.map((x) => `<li>${esc(x.titulo)}</li>`).join('')}</ul>` : '';
   hoja(`<h3>${esc(V.nombre)}</h3><p class="nota">${V.vencida ? 'Tu membresía venció. Renuévala en recepción y sigue con tus beneficios.' : 'Beneficios para los clientes de siempre.'}</p>${ben}${extra}
     ${gratis ? '<button class="btn ancho" style="margin-top:16px" onclick="unirse()">Unirme al club</button>' : `<div class="precio">${dinero(V.cuota)} <span>al ${esc(V.periodo || 'mes')}</span></div><p class="nota" style="margin-top:6px">Pídelo en recepción y lo activan en tu tarjeta al momento.</p>`}${btnCerrar('Cerrar')}`);
@@ -392,7 +408,7 @@ function hojaPremio(tipo) {
   const E = ESTADO, t = { cumple: 'Tu regalo de cumpleaños', detalle: 'Tu descuento' }[tipo] || 'Tu premio';
   const hoy = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Panama' });
   const d = tipo === 'cumple' ? E.cumple_regalo + (E.cumple_hasta && E.cumple_hasta !== hoy ? '. Puedes usarlo hasta el ' + fechaCorta(E.cumple_hasta) + '.' : '. Es para hoy, el día de tu cumpleaños.')
-    : tipo === 'detalle' ? (E.detalle || '') + '. Úsalo en tu próxima compra.' : (E.premio || '') + (/ o /.test(E.premio || '') ? '. Tú escoges.' : '.');
+    : tipo === 'detalle' ? (E.detalle || '') + ' en tu próxima compra.' + (NEG.config.detalle_nota ? ' ' + NEG.config.detalle_nota + '.' : '') : (E.premio || '') + (/ o /.test(E.premio || '') ? '. Tú escoges.' : '.');
   if (!recep()) return pedir(tipo);
   hoja(`<h3>${t}</h3><p class="nota">${esc(d)}</p><ul class="pasos" style="margin-top:12px"><li><i>1</i>Pídelo en recepción cuando vengas.</li><li><i>2</i>Di tu número de WhatsApp.</li><li><i>3</i>Te lo entregan y aquí se marca solo.</li></ul>${btnCerrar()}`);
 }
@@ -444,7 +460,8 @@ function bienvenida() {
       <div class="f-pie"><span>${esc(c.premio || '')}</span></div></div></div></div></div>
     <div class="cuerpo bienv">
       <h2>Tu tarjeta de cliente frecuente</h2>
-      <p>Cada compra suma un sello. Al completar ${meta} recibes: <b>${esc(c.premio || 'un premio')}</b>.${c.detalle_en ? ` En la visita ${c.detalle_en}: <b>${esc(c.detalle || '')}</b>.` : ''}${(c.dias_dobles || []).includes('3') ? ' Los miércoles tu visita vale doble.' : ''}</p>
+      <p>Cada compra suma un sello.</p>
+      <ul class="reglas"><li><b>Visita ${meta}:</b> ${esc(c.premio || 'un premio')}</li>${c.detalle_en ? `<li><b>Visita ${c.detalle_en}:</b> ${esc(c.detalle || '')}</li>` : ''}${(c.dias_dobles || []).includes('3') ? '<li><b>Miércoles:</b> tu visita vale doble</li>' : ''}</ul>
       <button class="btn ancho" onclick="registro()">Crear mi tarjeta</button>
       <button class="btn claro ancho" style="margin-top:10px" onclick="recuperar()">Ya tengo tarjeta</button>
     </div>`;
