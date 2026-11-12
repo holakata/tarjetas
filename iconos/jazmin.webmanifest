@@ -1,8 +1,8 @@
 {
   "name": "Jazmin Center · Mi tarjeta",
   "short_name": "Jazmin",
-  "start_url": "/tarjetas/t/?n=jazmin",
-  "scope": "/tarjetas/t/",
+  "start_url": "../t/?n=jazmin",
+  "scope": "../t/",
   "display": "browser",
   "background_color": "#F6F4F0",
   "theme_color": "#075F7A",
