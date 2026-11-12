@@ -101,7 +101,7 @@ function fechaCorta(iso) {
   const d = new Date(iso.length === 10 ? iso + 'T12:00:00' : iso);
   return `${d.getDate()} de ${MESES[d.getMonth()]}`;
 }
-const dinero = (n) => '$' + Number(n || 0).toFixed(2).replace(/\.00$/, '');
+const dinero = (n) => 'B/. ' + Number(n || 0).toFixed(2).replace(/\.00$/, '');
 const telBonito = (t) => (t || '').replace(/^(\d{4})(\d{4})$/, '$1-$2');
 const LOTO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5c2.1 2.6 2.1 6.9 0 9.5-2.1-2.6-2.1-6.9 0-9.5z"/><path d="M12 14c-2.6-.4-5.8-2.6-6.8-6.3 3.2.2 5.9 2.2 6.8 6.3z"/><path d="M12 14c2.6-.4 5.8-2.6 6.8-6.3-3.2.2-5.9 2.2-6.8 6.3z"/><path d="M4 16.5c2.4 1.8 5 2.5 8 2.5s5.6-.7 8-2.5"/></svg>';
 

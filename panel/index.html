@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261112192742">
+<meta name="kata-version" content="20261112201058">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Acceso clientes · Kata Studio</title>
@@ -386,7 +386,7 @@ async function regalos() {
     <form id="f" novalidate>
       <div class="tipos"><label><input type="radio" name="tp" value="monto" checked><span>Un monto</span></label><label><input type="radio" name="tp" value="servicio"><span>Un servicio</span></label></div>
       <div class="campo oculto" id="cServ"><label for="sv">Servicio</label><input id="sv" list="servs" placeholder="Ej. Masaje relajante de 60 minutos"><datalist id="servs">${serv}</datalist></div>
-      <div class="campo" id="cMto"><label for="mt">Monto ($)</label><input id="mt" inputmode="decimal" placeholder="50"></div>
+      <div class="campo" id="cMto"><label for="mt">Monto (B/.)</label><input id="mt" inputmode="decimal" placeholder="50"></div>
       <div class="fila"><div class="campo"><label for="pa">Para</label><input id="pa" placeholder="Mamá"></div><div class="campo"><label for="de">De</label><input id="de" placeholder="Andrea"></div></div>
       <div class="campo"><label for="wt">WhatsApp de quien la recibe</label><input id="wt" inputmode="tel" placeholder="6000-0000"><p class="nota" style="margin-top:6px">Si quien la compra prefiere mandarla él, pon su número.</p></div>
       <div class="campo"><label for="ms">Mensaje (opcional)</label><textarea id="ms" maxlength="180" placeholder="Para que te consientas un rato."></textarea></div>
@@ -428,7 +428,7 @@ async function vip() {
       <p class="sub">Solo las ven los miembros en su tarjeta.</p>
       <ul class="lista" id="prs"></ul>
       <form id="fp" novalidate style="margin-top:12px"><div class="campo"><label for="pt">Promoción</label><input id="pt" maxlength="60" placeholder="Masaje y facial"></div>
-        <div class="campo"><label for="pd">Detalle</label><input id="pd" maxlength="140" placeholder="Los dos por $45"></div>
+        <div class="campo"><label for="pd">Detalle</label><input id="pd" maxlength="140" placeholder="Los dos por B/. 45"></div>
         <div class="campo"><label for="ph">Válida hasta (opcional)</label><input id="ph" type="date"></div>
         <p class="error" id="perr"></p><button class="btn claro ancho" id="pgo">Agregar promoción</button></form></div></div>
     <div class="tarjeta" style="margin-top:18px"><h2 class="tit" style="font-size:18px">Miembros</h2><div class="filtros" id="vfil"></div>
