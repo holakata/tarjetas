@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261115153149">
+<meta name="kata-version" content="20261115154751">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Tarjeta de regalo</title>
@@ -92,7 +92,7 @@ async function cargar() {
     R = await rpc('regalo_ver', { p_codigo: codigoRegalo });
     if (!R) { $('#vista').innerHTML = '<p class="cargando">No encontramos esta tarjeta de regalo.</p>'; return; }
     aplicarMarca(R.negocio.config, R.negocio.slug); document.title = 'Tarjeta de regalo · ' + R.negocio.nombre;
-    if (R.estado === 'activa' && (params.get('sobre') || !store.get('kata-regalo-abierto-' + codigoRegalo))) return sobre();
+    if (R.estado === 'activa') return sobre(); /* el sobre sale cada vez que se abre la tarjeta */
     pintar();
   } catch (e) { $('#vista').innerHTML = `<p class="cargando">${esc(msg(e))}</p>`; }
 }
@@ -163,7 +163,7 @@ function sobre() {
     setTimeout(() => e.classList.add('abre'), 550);
     setTimeout(() => e.classList.add('sale'), 1250);
     setTimeout(() => e.classList.add('fin'), 2150);
-    setTimeout(() => { store.set('kata-regalo-abierto-' + codigoRegalo, '1'); pintar(true); e.classList.add('fuera'); try { navigator.vibrate && navigator.vibrate([12, 30, 12]); } catch (er) {} }, 2750);
+    setTimeout(() => { pintar(true); e.classList.add('fuera'); try { navigator.vibrate && navigator.vibrate([12, 30, 12]); } catch (er) {} }, 2750);
     setTimeout(() => e.remove(), 3400);
   };
   $('.sobre', e).addEventListener('click', abrir);
