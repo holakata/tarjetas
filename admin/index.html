@@ -44,7 +44,7 @@
   .fila-s .inf { flex: 1; min-width: 0; font-size: 15px; } .fila-s .inf span { display: block; font-size: 13px; color: var(--tinta-2); overflow-wrap: anywhere; }
   .fila-s select { width: auto; min-height: 38px; } .mini { min-height: 38px; padding: 0 14px; font-size: 14px; }
   .atras { background: none; border: 0; font-weight: 700; color: #0D1B36; padding: 14px 0 4px; cursor: pointer; font-size: 15px; }
-  .num { display: flex; gap: 10px; margin-bottom: 4px; } .num div { flex: 1; background: #F6F4F0; border-radius: 12px; padding: 10px; text-align: center; } .num b { display: block; font-size: 22px; }  .num span { font-size: 12.5px; color: var(--tinta-2); }
+  .num { display: flex; gap: 10px; margin-bottom: 4px; } .num div { flex: 1; background: #F6F4F0; border-radius: 12px; padding: 10px; text-align: center; } .num b { display: block; font-size: 22px; } .perm { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; font-size: 15px; font-weight: 500; color: var(--tinta); margin: 0; } .perm input { width: 22px; min-height: 22px; height: 22px; margin-top: 1px; flex: none; accent-color: #FF6B57; } .sub-c { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--linea); }  .num span { font-size: 12.5px; color: var(--tinta-2); }
 </style>
 </head>
 <body>
@@ -52,7 +52,7 @@
 <script src="../vendor/supabase.js"></script>
 <script src="xlsx.js"></script>
 <script>
-const sb = window.supabase.createClient('https://pxviwzkfljcvmrwrselw.supabase.co', 'sb_publishable_l-V4Nhz_lHpEafNLNwCPqQ_XTGVlzaL', { auth: { persistSession: true, storageKey: 'kata-admin' } });
+const sb = window.supabase.createClient('https://pxviwzkfljcvmrwrselw.supabase.co', 'sb_publishable_l-V4Nhz_lHpEafNLNwCPqQ_XTGVlzaL', { auth: { persistSession: true, storageKey: 'kata-panel' } });
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -66,7 +66,7 @@ function toast(t) { let e = $('#toast'); if (!e) { e = document.createElement('d
 async function rpc(fn, args = {}) { const { data, error } = await sb.rpc(fn, args); if (error) { const e = new Error(error.message); throw e; } return data; }
 const app = (h) => { $('#app').innerHTML = h; };
 const cabecera = (sub = '') => `<header class="top"><div class="top-in"><div><h2>Kata Studio · Administradora</h2><p>${esc(sub)}</p></div><button class="salir" onclick="salir()">Salir</button></div></header>`;
-async function salir() { await sb.auth.signOut(); location.reload(); }
+async function salir() { await sb.auth.signOut(); location.href = 'https://holakata.com/'; }
 
 /* ---------- acceso: correo + contraseña + código del autenticador ---------- */
 async function iniciar() {
@@ -124,37 +124,38 @@ async function inscribir(error = '') {
 
 /* ---------- lista de clientes ---------- */
 let LISTA = [];
-function estado(n) {
-  if (n.tipo === 'unico') return { c: 'ok', t: 'Pago único', p: 5, alerta: '' };
-  if (n.estado === 'pausado') return { c: '', t: 'Pausado', p: 4, alerta: '' };
-  if (n.pagado_hasta) {
-    const d = dias(n.pagado_hasta);
-    if (d < 0) return { c: 'venc', t: `Vencido hace ${plural(-d, 'día', 'días')}`, p: 0, d, alerta: `${n.nombre}: venció el ${fecha(n.pagado_hasta)}` };
-    if (d <= 5) return { c: 'pronto', t: d === 0 ? 'Vence hoy' : `Vence en ${plural(d, 'día', 'días')}`, p: 1, d, alerta: `${n.nombre}: ${d === 0 ? 'vence hoy' : 'vence en ' + plural(d, 'día', 'días')} (${fecha(n.pagado_hasta)})` };
-    return { c: 'ok', t: `Al día hasta ${fecha(n.pagado_hasta)}`, p: 3, d };
-  }
-  if (n.prueba_hasta) {
-    const d = dias(n.prueba_hasta);
-    if (d < 0) return { c: 'venc', t: 'Prueba terminada: falta el primer pago', p: 0, d, alerta: `${n.nombre}: terminó la prueba el ${fecha(n.prueba_hasta)}, falta el primer pago` };
-    if (d <= 5) return { c: 'pronto', t: `Prueba termina en ${plural(d, 'día', 'días')}`, p: 1, d, alerta: `${n.nombre}: la prueba termina el ${fecha(n.prueba_hasta)}, hay que cobrar` };
-    return { c: 'pronto', t: `En prueba hasta ${fecha(n.prueba_hasta)}`, p: 2, d };
-  }
-  return { c: '', t: 'Sin fecha de cobro', p: 2 };
-}
+const PERMISOS = [
+  ['canjear', 'Escanear al cliente y canjear premios y regalos'],
+  ['qr', 'Ver el QR del mostrador'],
+  ['regalos_crear', 'Crear tarjetas de regalo'],
+  ['regalos_anular', 'Anular tarjetas de regalo'],
+  ['ver_todo', 'Ver teléfonos y códigos completos de los regalos y los cumpleaños de todo el año'],
+  ['club_activar', 'Activar o renovar membresías del club'],
+  ['club_quitar', 'Quitar membresías del club'],
+  ['clientes_editar', 'Corregir los datos de un cliente'],
+  ['clientes_borrar', 'Borrar clientes'],
+  ['promos', 'Cambiar las promociones del club'],
+  ['resumen', 'Ver el resumen y la actividad del negocio'],
+  ['sin_limites', 'Sin límites (regalos de más de $200 o membresías de más de 3 meses)'],
+];
+const permisosHTML = (pre, v = {}) => `<div>${PERMISOS.map(([k, t]) => `<label class="perm"><input type="checkbox" data-p="${pre}" value="${k}"${v[k] ? ' checked' : ''}><span>${esc(t)}</span></label>`).join('')}</div>
+  <p class="sub-c" style="margin-top:6px"><button type="button" class="enlace" data-todos="${pre}:1">Marcar todos</button> · <button type="button" class="enlace" data-todos="${pre}:0">Quitar todos</button></p>`;
+const leerPermisos = (pre, raiz = document) => { const o = {}; PERMISOS.forEach(([k]) => (o[k] = false)); raiz.querySelectorAll(`[data-p="${pre}"]`).forEach((c) => (o[c.value] = c.checked)); return o; };
+function cablearTodos(raiz = document) { raiz.querySelectorAll('[data-todos]').forEach((b) => (b.onclick = () => { const [pre, v] = b.dataset.todos.split(':'); raiz.querySelectorAll(`[data-p="${pre}"]`).forEach((c) => (c.checked = v === '1')); })); }
+const efectivos = (s) => { if (s.permisos) return s.permisos; const o = {}; PERMISOS.forEach(([k]) => (o[k] = s.rol === 'dueno' || ['canjear', 'qr', 'regalos_crear', 'club_activar'].includes(k))); return o; };
+
 async function principal() {
   try { LISTA = await rpc('admin_lista'); }
   catch (e) { await sb.auth.signOut(); return login('Esta cuenta no tiene acceso al panel de administradora.'); }
   lista();
 }
 function lista() {
-  const L = LISTA.map((n) => ({ ...n, e: estado(n) })).sort((a, b) => (a.tipo === b.tipo ? 0 : a.tipo === 'mensualidad' ? -1 : 1) || a.e.p - b.e.p || (a.e.d ?? 999) - (b.e.d ?? 999) || a.nombre.localeCompare(b.nombre));
-  const alertas = L.filter((n) => n.e.alerta);
+  const L = [...LISTA].sort((a, b) => (a.tipo === b.tipo ? 0 : a.tipo === 'mensualidad' ? -1 : 1) || a.nombre.localeCompare(b.nombre));
   const card = (n) => `<button class="cli" data-id="${esc(n.id)}"><div class="logo${n.logo ? ' img' : ''}" ${!n.logo && n.color ? `style="background:${esc(n.color)}"` : ''}>${n.logo ? `<img src="../${esc(n.logo)}" alt="">` : esc(n.nombre.trim()[0] || '?')}</div>
-    <div class="inf"><b>${esc(n.nombre)}</b><span>${n.clientes} clientes · ${plural(n.cuentas, 'cuenta', 'cuentas')}${n.tipo === 'mensualidad' ? ' · ' + dinero(n.cuota) + '/mes' : ''}</span></div>
-    <div class="col"><span class="chip ${n.tipo === 'mensualidad' ? 'mens' : 'uni'}">${n.tipo === 'mensualidad' ? 'Mensualidad' : 'Pago único'}</span><span class="chip ${n.e.c}">${esc(n.e.t)}</span></div></button>`;
+    <div class="inf"><b>${esc(n.nombre)}</b><span>${n.clientes} clientes · ${plural(n.cuentas, 'cuenta', 'cuentas')}</span>${n.notas ? `<span style="display:block;margin-top:2px">${esc(n.notas.length > 70 ? n.notas.slice(0, 70) + '…' : n.notas)}</span>` : ''}</div>
+    <div class="col"><span class="chip ${n.tipo === 'mensualidad' ? 'mens' : 'uni'}">${n.tipo === 'mensualidad' ? 'Mensualidad' : 'Pago único'}</span></div></button>`;
   const mens = L.filter((n) => n.tipo === 'mensualidad'), uni = L.filter((n) => n.tipo !== 'mensualidad');
   app(`${cabecera('Tus clientes')}<main class="cont">
-    ${alertas.length ? `<div class="aviso"><b>Para cobrar o revisar</b>${alertas.map((n) => esc(n.e.alerta)).join('<br>')}</div>` : ''}
     <div class="sec">Mensualidades</div>${mens.map(card).join('') || '<p class="nota">Todavía no hay clientes con mensualidad.</p>'}
     <div class="sec">Pago único</div>${uni.map(card).join('') || '<p class="nota">Todavía no hay clientes con pago único.</p>'}
     <div class="sec">Copias de seguridad mensuales</div><div class="caja" id="copias"><p class="cargando">Cargando…</p></div></main>`);
@@ -163,12 +164,11 @@ function lista() {
 }
 
 /* ---------- Excel ---------- */
-const NOMBRES = { clientes: 'Clientes', visitas: 'Visitas', canjes: 'Canjes', regalos: 'Regalos', membresias: 'Membresías', actividad: 'Actividad', pagos: 'Pagos', negocios: 'Negocios' };
+const NOMBRES = { clientes: 'Clientes', visitas: 'Visitas', canjes: 'Canjes', regalos: 'Regalos', membresias: 'Membresías', actividad: 'Actividad', negocios: 'Negocios', staff: 'Cuentas' };
 function hojasDe(datos, conNegocio) {
   const quien = {}; (datos.clientes || []).forEach((c) => (quien[c.id] = c.nombre));
   const neg = {}; (datos.negocios || []).forEach((n) => (neg[n.id] = n.nombre));
-  const orden = ['clientes', 'visitas', 'canjes', 'regalos', 'membresias', 'actividad', 'pagos', 'negocios', 'staff'];
-  return orden.filter((k) => datos[k]).map((k) => {
+  return ['clientes', 'visitas', 'canjes', 'regalos', 'membresias', 'actividad', 'negocios', 'staff'].filter((k) => datos[k]).map((k) => {
     const filas = (datos[k] || []).map((o) => { const x = { ...o }; if ('cliente_id' in x) x.cliente = quien[x.cliente_id] || ''; if (conNegocio && 'negocio_id' in x) x.negocio = neg[x.negocio_id] || ''; return x; });
     return { nombre: NOMBRES[k] || k, filas: XLSX.deObjetos(filas) };
   });
@@ -176,11 +176,8 @@ function hojasDe(datos, conNegocio) {
 const hoyTxt = () => iso10(new Date(Date.now() - 5 * 36e5));
 async function copiaNegocio(id) {
   const n = LISTA.find((x) => x.id === id);
-  try {
-    const d = await rpc('admin_copia_negocio', { p_negocio: id });
-    XLSX.descargar(XLSX.crear(hojasDe(d, false)), `kata-${n.slug}-${hoyTxt()}.xlsx`);
-    toast('Copia descargada.');
-  } catch (e) { toast('No se pudo descargar. Vuelve a entrar.'); }
+  try { const d = await rpc('admin_copia_negocio', { p_negocio: id }); XLSX.descargar(XLSX.crear(hojasDe(d, false)), `kata-${n.slug}-${hoyTxt()}.xlsx`); toast('Copia descargada.'); }
+  catch (e) { toast('No se pudo descargar. Vuelve a entrar.'); }
 }
 async function copias() {
   const el = $('#copias');
@@ -196,56 +193,76 @@ async function copias() {
   } catch (e) { el.innerHTML = '<p class="error">No se pudieron cargar las copias.</p>'; }
 }
 
+/* ---------- cuentas (función segura en Supabase) ---------- */
+const ERR = { existe: 'Ese correo ya tiene una cuenta.', clave: 'La contraseña debe tener al menos 8 caracteres.', correo: 'Revisa el correo.', nombre: 'Escribe el nombre.', permiso: 'Tu sesión terminó. Vuelve a entrar.' };
+async function cuentas(cuerpo) {
+  const { data } = await sb.auth.getSession();
+  const r = await fetch('https://pxviwzkfljcvmrwrselw.supabase.co/functions/v1/admin-cuentas', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (data.session ? data.session.access_token : ''), apikey: 'sb_publishable_l-V4Nhz_lHpEafNLNwCPqQ_XTGVlzaL' }, body: JSON.stringify(cuerpo) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.error) throw new Error(ERR[j.error] || 'No se pudo. Intenta de nuevo.');
+  return j;
+}
+
 /* ---------- detalle de un cliente ---------- */
 async function detalle(id) {
-  const n = LISTA.find((x) => x.id === id), e = estado(n);
+  const n = LISTA.find((x) => x.id === id);
   app(`${cabecera(n.nombre)}<main class="cont"><button class="atras" onclick="lista()">← Todos los clientes</button>
     <div class="caja"><div class="num"><div><b>${n.clientes}</b><span>clientes</span></div><div><b>${n.cuentas}</b><span>cuentas</span></div><div><b>${n.ultima ? fecha(n.ultima) : '—'}</b><span>última actividad</span></div></div>
-      <p style="margin-top:10px"><span class="chip ${e.c}">${esc(e.t)}</span></p></div>
-    <div class="caja"><h3>Cobro</h3><form id="fg" novalidate>
-      <div class="dos"><div class="campo"><label>Tipo</label><select id="tp"><option value="mensualidad">Mensualidad</option><option value="unico">Pago único</option></select></div>
-      <div class="campo"><label>Cuota mensual (B/.)</label><input id="cu" inputmode="decimal"></div>
-      <div class="campo"><label>Estado</label><select id="es"><option value="prueba">En prueba</option><option value="activo">Activo</option><option value="pausado">Pausado</option></select></div>
-      <div class="campo"><label>Prueba termina</label><input id="pr" type="date"></div>
-      <div class="campo"><label>Pagado hasta</label><input id="ph" type="date"></div></div>
-      <div class="campo"><label>Notas</label><textarea id="nt"></textarea></div><button class="btn coral" id="sg">Guardar</button></form></div>
-    <div class="caja"><h3>Registrar un pago</h3><form id="fp" novalidate><div class="dos"><div class="campo"><label>Monto cobrado (B/.)</label><input id="pm" inputmode="decimal"></div>
-      <div class="campo"><label>Meses que cubre</label><select id="pn">${[1, 2, 3, 6, 12].map((m) => `<option>${m}</option>`).join('')}</select></div></div>
-      <div class="campo"><label>Nota (Yappy, transferencia…)</label><input id="pt"></div><button class="btn coral" id="sp">Registrar pago</button></form><div id="pagos" style="margin-top:12px"></div></div>
-    <div class="caja"><h3>Cuentas de ${esc(n.nombre)}</h3><div id="eq"><p class="cargando">Cargando…</p></div>
-      <p class="nota" style="margin-top:8px">Para crear cuentas nuevas o cambiar contraseñas, pídeselo a Claude por ahora.</p></div>
+      <button class="btn coral ancho" id="ent" style="margin-top:14px">Entrar al panel de ${esc(n.nombre)}</button></div>
+    <div class="caja"><h3>Arreglo con el cliente</h3><form id="fa" novalidate>
+      <div class="campo"><label>Tipo</label><select id="tp"><option value="mensualidad">Mensualidad</option><option value="unico">Pago único</option></select></div>
+      <div class="campo"><label>Arreglo de pago (monto, fechas, condiciones)</label><textarea id="nt"></textarea></div><button class="btn coral" id="sa">Guardar</button></form></div>
+    <div class="caja"><h3>Cuentas de ${esc(n.nombre)}</h3><div id="eq"><p class="cargando">Cargando…</p></div></div>
+    <div class="caja"><h3>Crear perfil</h3><form id="fc" novalidate autocomplete="off">
+      <div class="dos"><div class="campo"><label>Nombre</label><input id="cn" autocomplete="off"></div><div class="campo"><label>Posición en la empresa</label><input id="cg" placeholder="Recepcionista, Dueña…" autocomplete="off"></div>
+      <div class="campo"><label>Correo</label><input id="ce" type="email" autocomplete="off"></div><div class="campo"><label>Contraseña por mientras</label><input id="cc" autocomplete="off" placeholder="Mínimo 8 caracteres"></div></div>
+      <label style="margin-top:4px">Qué puede hacer</label>${permisosHTML('nuevo')}
+      <p class="error" id="ce2"></p><button class="btn coral" id="sc" style="margin-top:8px">Crear perfil</button></form>
+      <p class="nota" style="margin-top:8px">La persona entra con su correo y esa contraseña, y después la cambia desde su panel.</p></div>
     <div class="caja"><h3>Datos y copia</h3><button class="btn claro ancho" id="cp">Descargar copia en Excel</button>
-      <p class="nota" style="margin-top:8px">Clientes, visitas, canjes, regalos, membresías y actividad. Sin códigos ni claves.</p>
-      <a class="btn claro ancho" style="margin-top:10px" href="../panel/" target="_blank" rel="noopener">Abrir el panel de recepción</a></div></main>`);
-  $('#tp').value = n.tipo; $('#cu').value = n.cuota || ''; $('#es').value = n.estado; $('#pr').value = n.prueba_hasta || ''; $('#ph').value = n.pagado_hasta || ''; $('#nt').value = n.notas || ''; $('#pm').value = n.cuota || '';
+      <p class="nota" style="margin-top:8px">Clientes, visitas, canjes, regalos, membresías y actividad. Sin códigos ni claves.</p></div></main>`);
+  $('#tp').value = n.tipo; $('#nt').value = n.notas || '';
+  cablearTodos($('#fc'));
   $('#cp').onclick = () => copiaNegocio(id);
-  $('#fg').onsubmit = async (ev) => {
-    ev.preventDefault(); $('#sg').disabled = true;
-    try { await rpc('admin_guardar', { p_negocio: id, p_tipo: $('#tp').value, p_cuota: Number($('#cu').value) || 0, p_estado: $('#es').value, p_prueba: $('#pr').value || null, p_pagado: $('#ph').value || null, p_notas: $('#nt').value });
-      LISTA = await rpc('admin_lista'); toast('Guardado.'); detalle(id); } catch (x) { toast('No se pudo guardar.'); $('#sg').disabled = false; }
+  $('#ent').onclick = async () => { try { await rpc('admin_entrar', { p_negocio: id }); location.href = '../panel/'; } catch (e) { toast('No se pudo entrar.'); } };
+  $('#fa').onsubmit = async (ev) => { ev.preventDefault(); $('#sa').disabled = true;
+    try { await rpc('admin_arreglo', { p_negocio: id, p_tipo: $('#tp').value, p_notas: $('#nt').value }); LISTA = await rpc('admin_lista'); toast('Guardado.'); } catch (x) { toast('No se pudo guardar.'); }
+    $('#sa').disabled = false; };
+  $('#fc').onsubmit = async (ev) => {
+    ev.preventDefault(); $('#ce2').textContent = ''; $('#sc').disabled = true;
+    try {
+      await cuentas({ accion: 'crear', negocio_id: id, nombre: $('#cn').value, cargo: $('#cg').value, email: $('#ce').value, clave: $('#cc').value, permisos: leerPermisos('nuevo', $('#fc')) });
+      LISTA = await rpc('admin_lista'); toast('Perfil creado.'); detalle(id);
+    } catch (x) { $('#ce2').textContent = x.message; $('#sc').disabled = false; }
   };
-  $('#fp').onsubmit = async (ev) => {
-    ev.preventDefault(); const m = Number($('#pm').value);
-    if (!(m > 0)) return toast('Escribe el monto.');
-    $('#sp').disabled = true;
-    try { const h = await rpc('admin_pago', { p_negocio: id, p_monto: m, p_meses: Number($('#pn').value), p_nota: $('#pt').value });
-      LISTA = await rpc('admin_lista'); toast('Pago registrado. Pagado hasta ' + fecha(h) + '.'); detalle(id); } catch (x) { toast('No se pudo registrar.'); $('#sp').disabled = false; }
-  };
-  try {
-    const p = await rpc('admin_pagos', { p_negocio: id });
-    $('#pagos').innerHTML = p.length ? p.map((x) => `<div class="fila-s"><div class="inf"><b>${dinero(x.monto)}</b><span>${fecha(x.fecha)} · cubre hasta ${fecha(x.hasta)}${x.nota ? ' · ' + esc(x.nota) : ''}</span></div></div>`).join('') : '<p class="nota">Sin pagos registrados todavía.</p>';
-  } catch (x) {}
+  equipo(id);
+}
+async function equipo(id) {
+  const el = $('#eq');
   try {
     const q = await rpc('admin_equipo', { p_negocio: id });
-    $('#eq').innerHTML = q.map((s) => `<div class="fila-s"><div class="inf"><b>${esc(s.nombre)}</b><span>${esc(s.email)}</span></div>
-      <select data-r="${esc(s.user_id)}"><option value="dueno"${s.rol === 'dueno' ? ' selected' : ''}>Dueño</option><option value="recepcion"${s.rol === 'recepcion' ? ' selected' : ''}>Recepción</option></select>
-      <button class="btn claro mini" data-q="${esc(s.user_id)}">Quitar</button></div>`).join('') || '<p class="nota">Sin cuentas.</p>';
-    document.querySelectorAll('[data-r]').forEach((s) => (s.onchange = async () => { try { await rpc('admin_staff_rol', { p_user: s.dataset.r, p_rol: s.value }); toast('Permiso cambiado.'); } catch (x) { toast('No se pudo cambiar.'); } }));
-    document.querySelectorAll('[data-q]').forEach((b) => (b.onclick = async () => {
-      if (!confirm('¿Quitar el acceso de esta cuenta al panel? La persona ya no podrá entrar.')) return;
-      try { await rpc('admin_staff_quitar', { p_user: b.dataset.q }); toast('Acceso quitado.'); LISTA = await rpc('admin_lista'); detalle(id); } catch (x) { toast('No se pudo quitar.'); }
-    }));
-  } catch (x) {}
+    el.innerHTML = q.map((s) => `<div class="cta" data-u="${esc(s.user_id)}"><div class="fila-s"><div class="inf"><b>${esc(s.nombre)}${s.cargo ? ' · ' + esc(s.cargo) : ''}</b><span>${esc(s.email)}</span></div>
+        <button class="btn claro mini" data-a="perm">Permisos</button><button class="btn claro mini" data-a="clave">Contraseña</button><button class="btn claro mini" data-a="quitar">Quitar</button></div><div class="ed oculto"></div></div>`).join('') || '<p class="nota">Todavía no hay cuentas. Crea el primer perfil aquí abajo.</p>';
+    el.querySelectorAll('.cta').forEach((c) => {
+      const s = q.find((x) => x.user_id === c.dataset.u), ed = $('.ed', c);
+      const abrir = (html) => { ed.innerHTML = html; ed.classList.remove('oculto'); ed.classList.add('sub-c'); cablearTodos(ed); };
+      c.querySelectorAll('[data-a]').forEach((b) => (b.onclick = async () => {
+        const a = b.dataset.a;
+        if (a === 'perm') {
+          if (!ed.classList.contains('oculto') && ed.dataset.m === 'perm') { ed.classList.add('oculto'); ed.dataset.m = ''; return; }
+          abrir(`<div class="dos"><div class="campo"><label>Nombre</label><input data-n value="${esc(s.nombre)}"></div><div class="campo"><label>Posición</label><input data-g value="${esc(s.cargo || '')}"></div></div>${permisosHTML('u' + s.user_id.slice(0, 8), efectivos(s))}<button class="btn coral mini" data-s style="margin-top:8px">Guardar</button>`); ed.dataset.m = 'perm';
+          $('[data-s]', ed).onclick = async () => { try { await rpc('admin_perfil', { p_user: s.user_id, p_nombre: $('[data-n]', ed).value, p_cargo: $('[data-g]', ed).value, p_permisos: leerPermisos('u' + s.user_id.slice(0, 8), ed) }); toast('Permisos guardados.'); equipo(id); } catch (x) { toast('No se pudo guardar.'); } };
+        } else if (a === 'clave') {
+          if (!ed.classList.contains('oculto') && ed.dataset.m === 'clave') { ed.classList.add('oculto'); ed.dataset.m = ''; return; }
+          abrir(`<div class="campo"><label>Nueva contraseña por mientras</label><input data-c autocomplete="off" placeholder="Mínimo 8 caracteres"></div><button class="btn coral mini" data-s>Cambiar contraseña</button>`); ed.dataset.m = 'clave';
+          $('[data-s]', ed).onclick = async () => { try { await cuentas({ accion: 'clave', user_id: s.user_id, clave: $('[data-c]', ed).value }); toast('Contraseña cambiada.'); ed.classList.add('oculto'); } catch (x) { toast(x.message); } };
+        } else if (a === 'quitar') {
+          if (!confirm(`¿Eliminar la cuenta de ${s.nombre}? Ya no podrá entrar al panel.`)) return;
+          try { await cuentas({ accion: 'quitar', user_id: s.user_id }); LISTA = await rpc('admin_lista'); toast('Cuenta eliminada.'); detalle(id); } catch (x) { toast(x.message); }
+        }
+      }));
+    });
+  } catch (x) { el.innerHTML = '<p class="error">No se pudieron cargar las cuentas.</p>'; }
 }
 iniciar();
 </script>

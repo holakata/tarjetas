@@ -42,6 +42,7 @@ const MENSAJES = {
   regalo: 'Esta tarjeta de regalo ya no está activa.',
   vencida: 'Esta tarjeta de regalo ya venció.',
   permiso: 'Tu sesión terminó. Vuelve a entrar.',
+  sin_permiso: 'Tu perfil no tiene permiso para esto. Pídeselo a la persona encargada.',
   codigo: 'No encontramos ese código.',
   usado: 'Ese código ya se usó.',
   expirado: 'Ese código venció. Pide al cliente que lo vuelva a abrir.',
