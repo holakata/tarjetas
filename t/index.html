@@ -1,8 +1,10 @@
 <!doctype html>
 <html lang="es">
 <head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261115154751">
+<meta name="kata-version" content="20261115170431">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#075F7A" data-marca>
 <title>Mi tarjeta</title>
@@ -486,7 +488,7 @@ function registro() {
       <div class="campo"><label for="nom">Tu nombre</label><input id="nom" autocomplete="name" required></div>
       <div class="campo"><label for="tel">Tu WhatsApp</label><input id="tel" inputmode="tel" autocomplete="tel" placeholder="6000-0000" required></div>
       <div class="campo"><label>Tu cumpleaños (opcional)</label><div class="fila"><select id="dia"><option value="">Día</option>${dias}</select><select id="mes"><option value="">Mes</option>${meses}</select></div></div>
-      <div class="campo"><label for="pin">Crea un código de 4 números</label><input id="pin" class="pin" inputmode="numeric" maxlength="4" autocomplete="off" required><p class="nota" style="margin-top:6px">Te sirve para entrar a tu tarjeta desde otro celular.</p></div>
+      <div class="campo"><label for="pin">Crea un código de 6 números</label><input id="pin" class="pin" inputmode="numeric" maxlength="6" autocomplete="off" required><p class="nota" style="margin-top:6px">Te sirve para entrar a tu tarjeta desde otro celular.</p></div>
       <label class="check"><input type="checkbox" id="ok"> Acepto que ${esc(NEG.nombre)} guarde mi nombre, WhatsApp y cumpleaños para esta tarjeta y para escribirme sobre mis visitas. <button type="button" class="enlace" onclick="hojaPrivacidad()">Ver cómo se usan mis datos</button></label>
       <p class="error" id="err"></p>
       <button class="btn ancho" id="go">Crear mi tarjeta</button>
@@ -507,10 +509,10 @@ function registro() {
 }
 
 function recuperar() {
-  $('#vista').innerHTML = `<div style="height:22px"></div><section class="formu"><h2>Entra a tu tarjeta</h2><p>Con el WhatsApp y el código de 4 números que usaste al crearla.</p>
+  $('#vista').innerHTML = `<div style="height:22px"></div><section class="formu"><h2>Entra a tu tarjeta</h2><p>Con el WhatsApp y el código de 6 números que usaste al crearla.</p>
     <form id="f" novalidate>
       <div class="campo"><label for="tel">Tu WhatsApp</label><input id="tel" inputmode="tel" autocomplete="tel" required></div>
-      <div class="campo"><label for="pin">Tu código</label><input id="pin" class="pin" inputmode="numeric" maxlength="4" autocomplete="off" required></div>
+      <div class="campo"><label for="pin">Tu código</label><input id="pin" class="pin" inputmode="numeric" maxlength="6" autocomplete="off" required></div>
       <p class="error" id="err"></p><button class="btn ancho" id="go">Entrar</button></form>
     <p class="nota" style="text-align:center;margin-top:14px">¿Olvidaste tu código? Pídele a recepción que te ayude.</p>
     <p style="text-align:center"><button class="enlace" onclick="bienvenida()">Volver</button></p></section>`;
@@ -518,6 +520,7 @@ function recuperar() {
     ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
     try {
       const r = await rpc('cliente_recuperar', { p_slug: slug, p_tel: $('#tel').value, p_pin: $('#pin').value });
+      if (r.error) { const e = new Error(r.error); e.code = r.error; throw e; }
       store.set(CLAVE, r.device_key); ESTADO = await rpc('cliente_estado', { p_key: r.device_key });
       if (tokenQR) return sumar(r.device_key);
       pintar(); celebrar('Qué bueno verte de nuevo.');
