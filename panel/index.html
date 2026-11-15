@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="kata-version" content="20261112201652">
+<meta name="kata-version" content="20261115153149">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Acceso clientes · Kata Studio</title>
@@ -110,12 +110,18 @@
   .seccion h3 { font-size: 16px; margin-bottom: 4px; }
   .vacio { color: var(--tinta-2); font-size: 14px; padding: 8px 0; }
 
+  .renov { margin-top: 14px; padding: 16px; border-radius: 16px; background: var(--fondo-marca); } .renov > b { display: block; margin-bottom: 10px; }
+  /* Menú de tres puntos */
+  details.menu { position: relative; }
+  details.menu summary { list-style: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; cursor: pointer; font-size: 22px; line-height: 1; color: var(--tinta-2); user-select: none; }
+  details.menu summary::-webkit-details-marker { display: none; }
+  details.menu[open] summary, details.menu summary:hover { background: var(--fondo-marca); }
+  .menu-op { position: absolute; right: 0; top: 40px; z-index: 20; min-width: 190px; background: #fff; border: 1px solid var(--linea); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.14); padding: 6px; display: flex; flex-direction: column; }
+  .menu-op a, .menu-op button { display: block; text-align: left; padding: 11px 12px; border: 0; background: none; border-radius: 10px; font: inherit; font-size: 15px; color: var(--tinta); text-decoration: none; cursor: pointer; }
+  .menu-op a:hover, .menu-op button:hover { background: var(--fondo-marca); }
+  .menu-op .peligro { color: #A23A2F; }
+
   /* Regalos */
-  .tipos { display: flex; gap: 8px; margin-bottom: 16px; }
-  .tipos label { flex: 1; margin: 0; }
-  .tipos input { display: none; }
-  .tipos span { display: flex; align-items: center; justify-content: center; min-height: 48px; border: 1.5px solid var(--linea); border-radius: 12px; font-weight: 600; color: var(--tinta); cursor: pointer; background: var(--blanco); }
-  .tipos input:checked + span { border-color: var(--marca-2); background: var(--marca-2); color: #fff; }
   .creado { background: var(--fondo-marca); border-radius: 18px; padding: 18px; margin-top: 16px; }
   .creado .link { font-family: ui-monospace, Menlo, monospace; font-size: 13px; word-break: break-all; background: #fff; border-radius: 10px; padding: 10px; margin: 10px 0 12px; }
   .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -291,17 +297,37 @@ function ficha(f) {
   if (V && V.miembro) {
     acc += fila(esc(V.nombre), (V.beneficios || []).filter((b) => /descuento/i.test(b)).map(esc).join(' · ') || (V.beneficios || []).map(esc).join(' · '), `<button class="btn" style="background:#23262B;color:#E3C27E" onclick="accion('${f.codigo}','vip')">Aplicar descuento</button>`, f.vip_hoy ? 'Aplicado hoy' : '');
     (V.incluidos || []).forEach((x) => (acc += fila('Incluido del mes', esc(x.item), `<button class="btn" style="background:#23262B;color:#E3C27E" onclick="accion('${f.codigo}','incluido',${esc(JSON.stringify(x.item))})">Entregar</button>`, x.usado ? 'Ya usado este mes' : '')));
+    acc += fila('Membresía', V.hasta === hoyPty() ? 'Vence hoy' : V.hasta ? 'Activa hasta el ' + fechaCorta(V.hasta) : 'Activa', `<button class="btn claro" onclick="formRenovar()">Renovar</button>`);
+  } else if (V) {
+    acc += fila(esc(V.club || V.nombre), V.vencida ? 'Su membresía venció el ' + fechaCorta(V.hasta) : 'No es miembro', `<button class="btn claro" onclick="formRenovar()">${V.vencida ? 'Renovar' : 'Activar'}</button>`);
   }
+  FICHA = f;
   if (f.detalles_listos > 0) acc += fila('Descuento ' + esc((f.detalle || '').replace(/ de descuento.*/, '')), esc(NEG.config.detalle_nota || f.detalle || ''), `<button class="btn marca" onclick="accion('${f.codigo}','detalle')">Aplicar</button>`);
   if (f.premios_listos > 0) acc += fila('Premio listo', esc(f.premio || ''), `<button class="btn marca" onclick="accion('${f.codigo}','premio')">Entregar premio</button>`);
   if (f.cumple_regalo) acc += fila('Cumpleaños', esc(f.cumple_regalo) + (f.cumple_hasta && f.cumple_hasta !== hoyPty() ? ' · vale hasta el ' + fechaCorta(f.cumple_hasta) : ' · vale hoy') + (V && V.nivel === 'gold' ? ' · más su detalle Gold' : ''), `<button class="btn marca" onclick="accion('${f.codigo}','cumple')">Entregar regalo</button>`);
   $('#res').innerHTML = `<div class="tarjeta resultado"><span class="tipo">${V && V.miembro ? 'Miembro ' + esc(V.nombre) + (V.hasta ? ' · hasta el ' + fechaCorta(V.hasta) : '') : 'Cliente'}</span>
     <h3>${esc(f.nombre)}</h3><p class="det">${telBonito(f.tel)} · ${f.total_visitas} ${f.total_visitas === 1 ? 'visita' : 'visitas'} · cliente desde ${fechaCorta(f.cliente_desde)}</p>
     <div class="puntos" style="margin-bottom:14px">${Array.from({ length: meta }, (_, i) => `<i class="${i < llenos ? 'on' : ''}"></i>`).join('')}</div>
-    ${acc}<p class="nota" style="margin-top:10px">Suma la visita solo si es una compra nueva.</p>${V && !V.miembro ? `<p class="nota" style="margin-top:12px">${V.vencida ? 'Su membresía del ' + esc(V.nombre) + ' venció.' : 'No es miembro del ' + esc(V.nombre) + '.'} <button class="enlace" onclick="ir('vip').then(()=>{$('#vt').value='${f.tel}'})">${V.vencida ? 'Renovar' : 'Activar'}</button></p>` : ''}
+    ${acc}<p class="nota" style="margin-top:10px">Suma la visita solo si es una compra nueva.</p><div id="renov"></div>
     <div class="acciones" style="margin-top:16px"><a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(f.tel)}?text=${encodeURIComponent(`Hola ${f.nombre.split(' ')[0]}, aquí tienes tu tarjeta de ${NEG.nombre}: ${BASE}t/?n=${NEG.slug} . Guárdala para ver tus sellos y beneficios.`)}">Enviarle su tarjeta por WhatsApp</a>
     <button class="btn claro" style="min-height:40px;flex:1" onclick="nuevoCliente()">Siguiente cliente</button></div>
     ${DUENO() ? `<p class="nota" style="margin-top:14px;text-align:center"><button class="enlace" onclick="corregirCliente('${f.tel}', ${esc(JSON.stringify(f.nombre))})">Corregir datos</button> · <button class="enlace peligro" onclick="borrarCliente('${f.tel}', ${esc(JSON.stringify(f.nombre))})">Borrar cliente</button></p>` : ''}</div>`;
+}
+let FICHA = null;
+function formRenovar() {
+  const V = (FICHA && FICHA.vip) || {}, niv = V.niveles || [];
+  $('#renov').innerHTML = `<div class="renov"><b>${V.miembro ? 'Renovar' : 'Activar'} membresía</b>
+    ${niv.length ? `<div class="campo"><label for="rn">Tipo de membresía</label><select id="rn">${niv.map((n) => `<option value="${esc(n.id)}"${n.id === V.nivel ? ' selected' : ''}>${esc(n.nombre)} · ${dinero(n.cuota)} al ${esc(V.periodo || 'mes')}</option>`).join('')}</select></div>` : ''}
+    <div class="campo"><label for="rm">Por cuánto tiempo</label><select id="rm"><option value="1">1 mes</option><option value="3">3 meses</option><option value="6">6 meses</option><option value="12">1 año</option></select></div>
+    <p class="error" id="rerr"></p><div class="acciones"><button class="btn" id="rgo" onclick="renovarMembresia()">Confirmar</button><button class="btn claro" onclick="$('#renov').innerHTML=''">Cancelar</button></div></div>`;
+  $('#renov').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+async function renovarMembresia() {
+  $('#rgo').disabled = true; $('#rerr').textContent = '';
+  try {
+    const r = await rpc('vip_activar', { p_tel: FICHA.tel, p_meses: +$('#rm').value, p_nivel: $('#rn') ? $('#rn').value : null });
+    toast(`${r.nombre}: activa hasta el ${fechaCorta(r.hasta)}`, 'ok'); await abrirFicha(FICHA.tel);
+  } catch (e) { $('#rerr').textContent = msg(e); $('#rgo').disabled = false; }
 }
 async function accion(cod, a, item) {
   $$('.accion .btn').forEach((b) => (b.disabled = true));
@@ -323,8 +349,8 @@ async function buscar(cod) {
     const k = await rpc('canje_ver', { p_codigo: cod });
     let titulo, det, extra = '';
     if (k.tipo === 'regalo') {
-      titulo = 'Para ' + k.para; det = (k.de ? 'De ' + k.de + ' · ' : '') + (k.regalo_tipo === 'servicio' ? k.servicio : 'Saldo ' + dinero(k.saldo));
-      if (k.regalo_tipo === 'monto') extra = `<div class="campo"><label for="mto">¿Cuánto se consumió? (máximo ${dinero(k.saldo)})</label><input id="mto" inputmode="decimal" placeholder="0.00"></div>`;
+      titulo = 'Para ' + k.para; det = (k.de ? 'De ' + k.de + ' · ' : '') + 'Saldo ' + dinero(k.saldo);
+      extra = `<div class="campo"><label for="mto">¿Cuánto se consumió? (máximo ${dinero(k.saldo)})</label><input id="mto" inputmode="decimal" placeholder="0.00"></div>`;
     } else if (k.tipo === 'vip') {
       titulo = k.cliente; det = (k.hasta ? 'Miembro activo hasta el ' + fechaCorta(k.hasta) : 'Miembro activo') + ' · ' + telBonito(k.tel);
       extra = `<ul style="margin:0 0 16px 18px;color:var(--tinta-2)">${(k.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
@@ -394,28 +420,23 @@ async function clientes() {
 /* ---------- Tarjetas de regalo ---------- */
 async function regalos() {
   const vd = new Date(); vd.setMonth(vd.getMonth() + 3); const vence = vd.toISOString().slice(0, 10);
-  const serv = (NEG.config.servicios || []).map((s) => `<option>${esc(s)}</option>`).join('');
   $('#cont').innerHTML = `<div class="grid2"><div class="tarjeta"><h2 class="tit">Nueva tarjeta de regalo</h2><p class="sub">Escribe el monto que pidió el cliente. Vale 3 meses.</p>
     <form id="f" novalidate>
-      <div class="tipos"><label><input type="radio" name="tp" value="monto" checked><span>Un monto</span></label><label><input type="radio" name="tp" value="servicio"><span>Un servicio</span></label></div>
-      <div class="campo oculto" id="cServ"><label for="sv">Servicio</label><input id="sv" list="servs" placeholder="Ej. Masaje relajante de 60 minutos"><datalist id="servs">${serv}</datalist></div>
-      <div class="campo" id="cMto"><label for="mt">Monto (B/.)</label><input id="mt" inputmode="decimal" placeholder="50"></div>
+      <div class="campo"><label for="mt">Monto (B/.)</label><input id="mt" inputmode="decimal" placeholder="50"></div>
       <div class="fila"><div class="campo"><label for="pa">Para</label><input id="pa" placeholder="Mamá"></div><div class="campo"><label for="de">De</label><input id="de" placeholder="Andrea"></div></div>
       <div class="campo"><label for="wt">WhatsApp de quien la recibe</label><input id="wt" inputmode="tel" placeholder="6000-0000"><p class="nota" style="margin-top:6px">Si quien la compra prefiere mandarla él, pon su número.</p></div>
       <div class="campo"><label for="ms">Mensaje (opcional)</label><textarea id="ms" maxlength="180" placeholder="Para que te consientas un rato."></textarea></div>
       <div class="campo"><label for="vc">Válida hasta</label><input id="vc" type="date" value="${vence}"></div>
       <p class="error" id="err"></p><button class="btn ancho" id="go">Crear tarjeta de regalo</button></form><div id="hecho"></div></div>
     <div class="tarjeta"><h2 class="tit" style="font-size:18px">Tarjetas creadas</h2><div class="filtros" id="fil"></div><ul class="lista" id="lst"><li class="vacio">Cargando…</li></ul></div></div>`;
-  $$('input[name=tp]').forEach((r) => (r.onchange = () => { const m = $('input[name=tp]:checked').value === 'monto'; $('#cServ').classList.toggle('oculto', m); $('#cMto').classList.toggle('oculto', !m); }));
   $('#f').onsubmit = async (ev) => {
     ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
-    const tipo = $('input[name=tp]:checked').value;
     try {
-      const r = await rpc('regalo_crear', { p_para: $('#pa').value, p_de: $('#de').value, p_mensaje: $('#ms').value, p_tipo: tipo, p_servicio: $('#sv').value,
-        p_monto: tipo === 'monto' ? parseFloat(($('#mt').value || '').replace(',', '.')) : null, p_vence: $('#vc').value || null, p_tel: $('#wt').value || null });
+      const r = await rpc('regalo_crear', { p_para: $('#pa').value, p_de: $('#de').value, p_mensaje: $('#ms').value,
+        p_monto: parseFloat(($('#mt').value || '').replace(',', '.')), p_vence: $('#vc').value || null, p_tel: $('#wt').value || null });
       const link = `${BASE}regalo/?g=${r.codigo}`, para = $('#pa').value.trim();
       const txt = textoRegalo(para, $('#de').value.trim(), link);
-      $('#f').reset(); $('#vc').value = vence; $('#cServ').classList.add('oculto'); $('#cMto').classList.remove('oculto');
+      $('#f').reset(); $('#vc').value = vence;
       $('#hecho').innerHTML = `<div class="creado"><b>Lista la tarjeta para ${esc(para)}</b><div class="link">${esc(link)}</div>
         <div class="acciones">${r.tel ? `<a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(r.tel)}?text=${encodeURIComponent(txt)}">Enviar a ${esc(telBonito(r.tel))}</a>` : ''}
         <a class="${r.tel ? 'btn claro' : 'wa'}" style="min-height:40px" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">${r.tel ? 'Enviar a otro número' : 'Enviar por WhatsApp'}</a>
@@ -432,7 +453,7 @@ async function vip() {
   const V = NEG.config.vip || {};
   $('#cont').innerHTML = `<div class="grid2"><div class="tarjeta"><h2 class="tit">${esc(V.nombre || 'Club VIP')}</h2>
       <p class="sub">${(V.niveles || []).length ? '' : +V.cuota > 0 ? dinero(V.cuota) + ' al ' + esc(V.periodo || 'mes') + '. ' : ''}Cuando el cliente pague, actívalo con su WhatsApp.</p>
-      <form id="f" novalidate><div class="campo"><label for="vt">WhatsApp del cliente</label><input id="vt" inputmode="tel" placeholder="6000-0000"></div>
+      <form id="f" novalidate><div class="campo"><label for="vq">Cliente</label><input id="vq" placeholder="Nombre o WhatsApp" autocomplete="off"><input id="vt" type="hidden"><ul class="lista" id="vres"></ul></div>
       ${(V.niveles || []).length ? `<div class="campo"><label for="vn">Nivel</label><select id="vn">${V.niveles.map((n) => `<option value="${esc(n.id)}">${esc(n.nombre)} · ${dinero(n.cuota)} al ${esc(V.periodo || 'mes')}</option>`).join('')}</select></div>` : ''}
       <div class="campo"><label for="vm">Tiempo</label><select id="vm"><option value="1">1 mes</option><option value="3">3 meses</option><option value="6">6 meses</option><option value="12">1 año</option></select></div>
       <p class="error" id="err"></p><button class="btn ancho" id="go">Activar o renovar</button></form>
@@ -453,14 +474,23 @@ async function vip() {
     await guardarPromos([...(NEG.config.promos || []), { titulo: $('#pt').value, detalle: $('#pd').value, hasta: $('#ph').value || null }]) && $('#fp').reset();
   };
   $('#f').onsubmit = async (ev) => {
-    ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
-    try { const r = await rpc('vip_activar', { p_tel: $('#vt').value, p_meses: +$('#vm').value, p_nivel: $('#vn') ? $('#vn').value : null }); toast(`${r.nombre}: activa hasta el ${fechaCorta(r.hasta)}`, 'ok'); $('#f').reset(); listaVip(); }
+    ev.preventDefault(); $('#err').textContent = '';
+    if (!$('#vt').value) { $('#err').textContent = 'Busca y escoge al cliente.'; return; }
+    $('#go').disabled = true;
+    try { const r = await rpc('vip_activar', { p_tel: $('#vt').value, p_meses: +$('#vm').value, p_nivel: $('#vn') ? $('#vn').value : null }); toast(`${r.nombre}: activa hasta el ${fechaCorta(r.hasta)}`, 'ok'); $('#f').reset(); $('#vt').value = ''; listaVip(); }
     catch (e) { $('#err').textContent = msg(e); }
     $('#go').disabled = false;
   };
+  let tv = null;
+  $('#vq').oninput = () => { $('#vt').value = ''; clearTimeout(tv); tv = setTimeout(async () => {
+    const q = $('#vq').value.trim(); if (q.length < 2) { $('#vres').innerHTML = ''; return; }
+    try { const L = await rpc('ficha_buscar', { p_q: q });
+      $('#vres').innerHTML = L.length ? L.map((c) => `<li style="cursor:pointer" onclick="elegirCliente('${c.tel}', ${esc(JSON.stringify(c.nombre))})"><div class="av">${esc(c.nombre.trim()[0])}</div><div class="info"><b>${esc(c.nombre)}</b><span>${telBonito(c.tel)}</span></div><span class="enlace">Elegir</span></li>`).join('') : '<li class="vacio">No hay clientes con ese dato. Primero debe crear su tarjeta escaneando el QR.</li>';
+    } catch (e) { toast(msg(e), 'mal'); } }, 250); };
   $('#vbus').oninput = pintarVip;
   listaVip();
 }
+function elegirCliente(tel, nombre) { $('#vt').value = tel; $('#vq').value = nombre + ' · ' + telBonito(tel); $('#vres').innerHTML = ''; }
 let MIEMBROS = [], FILTRO_V = null;
 async function listaVip() {
   try { MIEMBROS = await rpc('vip_lista'); pintarVip(); }
@@ -577,14 +607,19 @@ function pintarRegalos() {
     const et = { activa: 'Activa', pronto: d === 0 ? 'Vence hoy' : `Vence en ${d} d`, vencida: 'Vencida', usada: 'Usada', anulada: 'Anulada' }[st];
     const cuando = st === 'vencida' ? 'venció el ' + fechaCorta(g.vence) : st === 'usada' || st === 'anulada' ? 'creada el ' + fechaCorta(g.creado) : g.vence ? 'vence el ' + fechaCorta(g.vence) : 'sin vencimiento';
     const txt = st === 'pronto' ? `Hola ${g.para}, te recordamos que tu tarjeta de regalo de ${NEG.nombre} vence el ${fechaCorta(g.vence)}. ¿Te agendamos tu cita? ${BASE}regalo/?g=${g.codigo}` : textoRegalo(g.para, g.de, BASE + 'regalo/?g=' + g.codigo);
+    const activa = st === 'activa' || st === 'pronto';
     return `<li class="rg"><div class="info"><b>Para ${esc(g.para)}</b>
-      <span>${g.de ? 'De ' + esc(g.de) + ' · ' : ''}${g.tipo === 'servicio' ? esc(g.servicio) : 'quedan ' + dinero(g.saldo) + ' de ' + dinero(g.monto)} · ${cuando}</span></div>
+      <span>${g.de ? 'De ' + esc(g.de) + ' · ' : ''}${st === 'usada' || st === 'anulada' ? dinero(g.monto) : 'quedan ' + dinero(g.saldo) + ' de ' + dinero(g.monto)} · ${cuando}</span></div>
       <div class="rg-acc"><span class="estado ${st === 'anulada' ? 'usada' : st}">${et}</span>
-      ${g.tel && (st === 'activa' || st === 'pronto') ? `<a class="wa" style="min-height:36px;padding:0 10px" target="_blank" rel="noopener" href="https://wa.me/${waNum(g.tel)}?text=${encodeURIComponent(txt)}">${st === 'pronto' ? 'Recordar' : 'Reenviar'}</a>` : ''}
-      <a class="enlace" target="_blank" href="${BASE}regalo/?g=${g.codigo}">Ver</a>${DUENO() && (st === 'activa' || st === 'pronto') ? `<button class="enlace peligro" onclick="anularRegalo('${g.codigo}', ${esc(JSON.stringify(g.para))})">Anular</button>` : ''}</div></li>`;
+      <details class="menu"><summary aria-label="Más opciones">⋯</summary><div class="menu-op">
+        <a target="_blank" href="${BASE}regalo/?g=${g.codigo}">Ver tarjeta</a>
+        ${g.tel && activa ? `<a target="_blank" rel="noopener" href="https://wa.me/${waNum(g.tel)}?text=${encodeURIComponent(txt)}">${st === 'pronto' ? 'Recordar por WhatsApp' : 'Reenviar por WhatsApp'}</a>` : ''}
+        ${DUENO() && activa ? `<button class="peligro" onclick="anularRegalo('${g.codigo}', ${esc(JSON.stringify(g.para))})">Anular</button>` : ''}
+      </div></details></div></li>`;
   }).join('') : `<li class="vacio">${vacio}</li>`;
 }
 
+document.addEventListener('click', (e) => { document.querySelectorAll('details.menu[open]').forEach((d) => { if (!d.contains(e.target)) d.removeAttribute('open'); }); });
 iniciar();
 </script>
 </body>
