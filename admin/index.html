@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0D1B36">
+<title>Administradora · Kata Studio</title>
+<link rel="stylesheet" href="../comun.css">
+<style>
+  body { background: var(--fondo); }
+  .login { max-width: 400px; margin: 0 auto; padding: 60px 20px; }
+  .kmark { width: 34px; height: 34px; position: relative; margin-bottom: 20px; }
+  .kmark i { position: absolute; width: 12px; height: 12px; border: 3px solid #0D1B36; border-radius: 4px; }
+  .kmark i:nth-child(1) { top: 0; left: 0; } .kmark i:nth-child(2) { top: 0; right: 0; } .kmark i:nth-child(3) { bottom: 0; left: 0; }
+  .kmark b { position: absolute; right: -1px; bottom: -1px; width: 15px; height: 15px; background: #FF6B57; border-radius: 50%; }
+  h1 { font-family: "Plus Jakarta Sans", "Inst", sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -.8px; line-height: 1.1; color: #0D1B36; margin-bottom: 8px; }
+  .login > p { color: var(--tinta-2); margin-bottom: 22px; }
+  .login .btn, .cont .btn.coral { background: #FF6B57; }
+  .qr { display: block; margin: 0 auto 12px; width: 200px; height: 200px; background: #fff; border-radius: 12px; padding: 8px; }
+  .sec { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--tinta-2); margin: 26px 0 10px; }
+  .top { background: #0D1B36; color: #fff; }
+  .top-in { max-width: 900px; margin: 0 auto; padding: 14px 18px; display: flex; align-items: center; gap: 12px; }
+  .top-in h2 { font-size: 17px; font-weight: 700; flex: 1; } .top-in p { font-size: 13px; opacity: .7; }
+  .top .salir { background: none; border: 1px solid rgba(255,255,255,.3); color: #fff; border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+  .cont { max-width: 900px; margin: 0 auto; padding: 8px 18px 70px; }
+  .aviso { background: #FFF1E6; border: 1px solid #F4B860; border-radius: 16px; padding: 14px 16px; margin-top: 18px; font-size: 15px; }
+  .aviso b { display: block; margin-bottom: 2px; }
+  .cli { display: flex; align-items: center; gap: 14px; width: 100%; text-align: left; background: #fff; border: 1px solid var(--linea); border-radius: 18px; padding: 14px; margin-bottom: 10px; cursor: pointer; box-shadow: var(--sombra); }
+  .logo { width: 46px; height: 46px; border-radius: 13px; flex: none; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 18px; background: #0D1B36; overflow: hidden; }
+  .logo.img { background: #fff; border: 1px solid var(--linea); padding: 4px; } .logo img { width: 100%; height: 100%; object-fit: contain; }
+  .cli .inf { flex: 1; min-width: 0; } .cli b { display: block; font-size: 16px; } .cli span { font-size: 14px; color: var(--tinta-2); }
+  .chip { display: inline-block; font-size: 12.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #EFEAE2; color: #55606E; white-space: nowrap; }
+  .chip.ok { background: #DDF1E7; color: #1E6B49; } .chip.pronto { background: #FFE9C7; color: #8A5A00; } .chip.venc { background: #FBDCD5; color: #A33A22; } .chip.mens { background: #E4ECFB; color: #2A4F9A; } .chip.uni { background: #EDE6FF; color: #5A42BD; }
+  .col { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .caja { background: #fff; border: 1px solid var(--linea); border-radius: 18px; padding: 16px; margin-bottom: 12px; box-shadow: var(--sombra); }
+  .caja h3 { font-size: 17px; margin-bottom: 10px; }
+  .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } @media (max-width: 520px) { .dos { grid-template-columns: 1fr; } }
+  .caja input, .caja select, .caja textarea { width: 100%; min-height: 46px; padding: 10px 12px; border: 1.5px solid var(--linea); border-radius: 12px; background: #fff; }
+  .caja textarea { min-height: 70px; } .caja .campo { margin-bottom: 12px; }
+  .fila-s { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--linea); } .fila-s:first-of-type { border-top: 0; }
+  .fila-s .inf { flex: 1; min-width: 0; font-size: 15px; } .fila-s .inf span { display: block; font-size: 13px; color: var(--tinta-2); overflow-wrap: anywhere; }
+  .fila-s select { width: auto; min-height: 38px; } .mini { min-height: 38px; padding: 0 14px; font-size: 14px; }
+  .atras { background: none; border: 0; font-weight: 700; color: #0D1B36; padding: 14px 0 4px; cursor: pointer; font-size: 15px; }
+  .num { display: flex; gap: 10px; margin-bottom: 4px; } .num div { flex: 1; background: #F6F4F0; border-radius: 12px; padding: 10px; text-align: center; } .num b { display: block; font-size: 22px; }  .num span { font-size: 12.5px; color: var(--tinta-2); }
+</style>
+</head>
+<body>
+<div id="app"><p class="cargando" style="padding:40px;text-align:center">Cargando…</p></div>
+<script src="../vendor/supabase.js"></script>
+<script src="xlsx.js"></script>
+<script>
+const sb = window.supabase.createClient('https://pxviwzkfljcvmrwrselw.supabase.co', 'sb_publishable_l-V4Nhz_lHpEafNLNwCPqQ_XTGVlzaL', { auth: { persistSession: true, storageKey: 'kata-admin' } });
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const fecha = (iso) => { if (!iso) return ''; const d = new Date(String(iso).slice(0, 10) + 'T12:00:00'); return `${d.getDate()} ${MESES[d.getMonth()]} ${d.getFullYear()}`; };
+const hoy = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12); };
+const dias = (iso) => Math.round((new Date(String(iso).slice(0, 10) + 'T12:00:00') - hoy()) / 864e5);
+const plural = (n, a, b) => `${n} ${n === 1 ? a : b}`;
+const dinero = (n) => 'B/. ' + Number(n || 0).toFixed(2).replace(/\.00$/, '');
+const iso10 = (d) => d.toISOString().slice(0, 10);
+function toast(t) { let e = $('#toast'); if (!e) { e = document.createElement('div'); e.id = 'toast'; document.body.appendChild(e); } e.className = 'toast'; e.textContent = t; requestAnimationFrame(() => e.classList.add('ver')); clearTimeout(e._h); e._h = setTimeout(() => e.classList.remove('ver'), 3800); }
+async function rpc(fn, args = {}) { const { data, error } = await sb.rpc(fn, args); if (error) { const e = new Error(error.message); throw e; } return data; }
+const app = (h) => { $('#app').innerHTML = h; };
+const cabecera = (sub = '') => `<header class="top"><div class="top-in"><div><h2>Kata Studio · Administradora</h2><p>${esc(sub)}</p></div><button class="salir" onclick="salir()">Salir</button></div></header>`;
+async function salir() { await sb.auth.signOut(); location.reload(); }
+
+/* ---------- acceso: correo + contraseña + código del autenticador ---------- */
+async function iniciar() {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) return login();
+  paso2();
+}
+function login(error = '') {
+  app(`<div class="login"><div class="kmark"><i></i><i></i><i></i><b></b></div><h1>Panel de administradora</h1><p>Solo para Kata Studio.</p>
+    <form id="f" novalidate><div class="campo"><label for="em">Correo</label><input id="em" type="email" autocomplete="username"></div>
+    <div class="campo"><label for="pw">Contraseña</label><input id="pw" type="password" autocomplete="current-password"></div>
+    <p class="error" id="err">${esc(error)}</p><button class="btn ancho" id="go">Entrar</button></form></div>`);
+  $('#f').onsubmit = async (ev) => {
+    ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
+    const { error: e } = await sb.auth.signInWithPassword({ email: $('#em').value.trim(), password: $('#pw').value });
+    if (e) { $('#err').textContent = 'El correo o la contraseña no coinciden.'; $('#go').disabled = false; return; }
+    paso2();
+  };
+}
+async function paso2() {
+  const { data: a } = await sb.auth.mfa.getAuthenticatorAssuranceLevel();
+  if (a && a.currentLevel === 'aal2') return principal();
+  const { data: f } = await sb.auth.mfa.listFactors();
+  const t = (f && f.totp || [])[0];
+  if (t) return pedirCodigo(t.id);
+  for (const u of (f && f.all || [])) await sb.auth.mfa.unenroll({ factorId: u.id });
+  inscribir();
+}
+function pedirCodigo(factorId, error = '') {
+  app(`<div class="login"><div class="kmark"><i></i><i></i><i></i><b></b></div><h1>Código de seguridad</h1><p>Abre tu app autenticadora y escribe el código de 6 números de Kata Studio.</p>
+    <form id="f" novalidate><div class="campo"><label for="cd">Código</label><input id="cd" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
+    <p class="error" id="err">${esc(error)}</p><button class="btn ancho" id="go">Confirmar</button></form><p style="margin-top:18px"><button class="enlace" onclick="salir()">Salir</button></p></div>`);
+  $('#cd').focus();
+  $('#f').onsubmit = async (ev) => {
+    ev.preventDefault(); $('#go').disabled = true;
+    const { error } = await sb.auth.mfa.challengeAndVerify({ factorId, code: $('#cd').value.trim() });
+    if (error) return pedirCodigo(factorId, 'Ese código no es correcto. Prueba con el siguiente.');
+    principal();
+  };
+}
+async function inscribir(error = '') {
+  const { data, error: e } = await sb.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'Kata ' + Date.now() });
+  if (e) { await sb.auth.signOut(); return login('No se pudo activar la verificación. Intenta de nuevo.'); }
+  app(`<div class="login"><div class="kmark"><i></i><i></i><i></i><b></b></div><h1>Activa tu código de seguridad</h1><p>Primera vez: escanea este QR con Google Authenticator, Authy o Microsoft Authenticator. Luego escribe el código que te muestre.</p>
+    <img class="qr" alt="QR" src="${esc(data.totp.qr_code)}"><p class="nota" style="text-align:center;margin-bottom:14px;overflow-wrap:anywhere">¿No puedes escanear? Escribe esta clave: <b>${esc(data.totp.secret)}</b></p>
+    <form id="f" novalidate><div class="campo"><label for="cd">Código de 6 números</label><input id="cd" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></div>
+    <p class="error" id="err">${esc(error)}</p><button class="btn ancho" id="go">Activar y entrar</button></form></div>`);
+  $('#f').onsubmit = async (ev) => {
+    ev.preventDefault(); $('#go').disabled = true;
+    const { error: v } = await sb.auth.mfa.challengeAndVerify({ factorId: data.id, code: $('#cd').value.trim() });
+    if (v) { $('#err').textContent = 'Ese código no es correcto. Prueba con el siguiente.'; $('#go').disabled = false; return; }
+    principal();
+  };
+}
+
+/* ---------- lista de clientes ---------- */
+let LISTA = [];
+function estado(n) {
+  if (n.tipo === 'unico') return { c: 'ok', t: 'Pago único', p: 5, alerta: '' };
+  if (n.estado === 'pausado') return { c: '', t: 'Pausado', p: 4, alerta: '' };
+  if (n.pagado_hasta) {
+    const d = dias(n.pagado_hasta);
+    if (d < 0) return { c: 'venc', t: `Vencido hace ${plural(-d, 'día', 'días')}`, p: 0, d, alerta: `${n.nombre}: venció el ${fecha(n.pagado_hasta)}` };
+    if (d <= 5) return { c: 'pronto', t: d === 0 ? 'Vence hoy' : `Vence en ${plural(d, 'día', 'días')}`, p: 1, d, alerta: `${n.nombre}: ${d === 0 ? 'vence hoy' : 'vence en ' + plural(d, 'día', 'días')} (${fecha(n.pagado_hasta)})` };
+    return { c: 'ok', t: `Al día hasta ${fecha(n.pagado_hasta)}`, p: 3, d };
+  }
+  if (n.prueba_hasta) {
+    const d = dias(n.prueba_hasta);
+    if (d < 0) return { c: 'venc', t: 'Prueba terminada: falta el primer pago', p: 0, d, alerta: `${n.nombre}: terminó la prueba el ${fecha(n.prueba_hasta)}, falta el primer pago` };
+    if (d <= 5) return { c: 'pronto', t: `Prueba termina en ${plural(d, 'día', 'días')}`, p: 1, d, alerta: `${n.nombre}: la prueba termina el ${fecha(n.prueba_hasta)}, hay que cobrar` };
+    return { c: 'pronto', t: `En prueba hasta ${fecha(n.prueba_hasta)}`, p: 2, d };
+  }
+  return { c: '', t: 'Sin fecha de cobro', p: 2 };
+}
+async function principal() {
+  try { LISTA = await rpc('admin_lista'); }
+  catch (e) { await sb.auth.signOut(); return login('Esta cuenta no tiene acceso al panel de administradora.'); }
+  lista();
+}
+function lista() {
+  const L = LISTA.map((n) => ({ ...n, e: estado(n) })).sort((a, b) => (a.tipo === b.tipo ? 0 : a.tipo === 'mensualidad' ? -1 : 1) || a.e.p - b.e.p || (a.e.d ?? 999) - (b.e.d ?? 999) || a.nombre.localeCompare(b.nombre));
+  const alertas = L.filter((n) => n.e.alerta);
+  const card = (n) => `<button class="cli" data-id="${esc(n.id)}"><div class="logo${n.logo ? ' img' : ''}" ${!n.logo && n.color ? `style="background:${esc(n.color)}"` : ''}>${n.logo ? `<img src="../${esc(n.logo)}" alt="">` : esc(n.nombre.trim()[0] || '?')}</div>
+    <div class="inf"><b>${esc(n.nombre)}</b><span>${n.clientes} clientes · ${plural(n.cuentas, 'cuenta', 'cuentas')}${n.tipo === 'mensualidad' ? ' · ' + dinero(n.cuota) + '/mes' : ''}</span></div>
+    <div class="col"><span class="chip ${n.tipo === 'mensualidad' ? 'mens' : 'uni'}">${n.tipo === 'mensualidad' ? 'Mensualidad' : 'Pago único'}</span><span class="chip ${n.e.c}">${esc(n.e.t)}</span></div></button>`;
+  const mens = L.filter((n) => n.tipo === 'mensualidad'), uni = L.filter((n) => n.tipo !== 'mensualidad');
+  app(`${cabecera('Tus clientes')}<main class="cont">
+    ${alertas.length ? `<div class="aviso"><b>Para cobrar o revisar</b>${alertas.map((n) => esc(n.e.alerta)).join('<br>')}</div>` : ''}
+    <div class="sec">Mensualidades</div>${mens.map(card).join('') || '<p class="nota">Todavía no hay clientes con mensualidad.</p>'}
+    <div class="sec">Pago único</div>${uni.map(card).join('') || '<p class="nota">Todavía no hay clientes con pago único.</p>'}
+    <div class="sec">Copias de seguridad mensuales</div><div class="caja" id="copias"><p class="cargando">Cargando…</p></div></main>`);
+  document.querySelectorAll('.cli').forEach((b) => (b.onclick = () => detalle(b.dataset.id)));
+  copias();
+}
+
+/* ---------- Excel ---------- */
+const NOMBRES = { clientes: 'Clientes', visitas: 'Visitas', canjes: 'Canjes', regalos: 'Regalos', membresias: 'Membresías', actividad: 'Actividad', pagos: 'Pagos', negocios: 'Negocios' };
+function hojasDe(datos, conNegocio) {
+  const quien = {}; (datos.clientes || []).forEach((c) => (quien[c.id] = c.nombre));
+  const neg = {}; (datos.negocios || []).forEach((n) => (neg[n.id] = n.nombre));
+  const orden = ['clientes', 'visitas', 'canjes', 'regalos', 'membresias', 'actividad', 'pagos', 'negocios', 'staff'];
+  return orden.filter((k) => datos[k]).map((k) => {
+    const filas = (datos[k] || []).map((o) => { const x = { ...o }; if ('cliente_id' in x) x.cliente = quien[x.cliente_id] || ''; if (conNegocio && 'negocio_id' in x) x.negocio = neg[x.negocio_id] || ''; return x; });
+    return { nombre: NOMBRES[k] || k, filas: XLSX.deObjetos(filas) };
+  });
+}
+const hoyTxt = () => iso10(new Date(Date.now() - 5 * 36e5));
+async function copiaNegocio(id) {
+  const n = LISTA.find((x) => x.id === id);
+  try {
+    const d = await rpc('admin_copia_negocio', { p_negocio: id });
+    XLSX.descargar(XLSX.crear(hojasDe(d, false)), `kata-${n.slug}-${hoyTxt()}.xlsx`);
+    toast('Copia descargada.');
+  } catch (e) { toast('No se pudo descargar. Vuelve a entrar.'); }
+}
+async function copias() {
+  const el = $('#copias');
+  try {
+    const c = await rpc('admin_copias');
+    el.innerHTML = c.length ? c.slice(0, 13).map((x) => `<div class="fila-s"><div class="inf"><b>${fecha(x.creado)}</b><span>Copia automática del día 1</span></div><button class="btn claro mini" data-c="${x.id}">Descargar Excel</button></div>`).join('') : '<p class="nota">Todavía no hay copias.</p>';
+    el.querySelectorAll('[data-c]').forEach((b) => (b.onclick = async () => {
+      b.disabled = true;
+      try { const f = await rpc('admin_copia_ver', { p_id: Number(b.dataset.c) }); XLSX.descargar(XLSX.crear(hojasDe(f, true)), `kata-copia-${String(c.find((x) => String(x.id) === b.dataset.c).creado).slice(0, 10)}.xlsx`); toast('Copia descargada.'); }
+      catch (e) { toast('No se pudo descargar.'); }
+      b.disabled = false;
+    }));
+  } catch (e) { el.innerHTML = '<p class="error">No se pudieron cargar las copias.</p>'; }
+}
+
+/* ---------- detalle de un cliente ---------- */
+async function detalle(id) {
+  const n = LISTA.find((x) => x.id === id), e = estado(n);
+  app(`${cabecera(n.nombre)}<main class="cont"><button class="atras" onclick="lista()">← Todos los clientes</button>
+    <div class="caja"><div class="num"><div><b>${n.clientes}</b><span>clientes</span></div><div><b>${n.cuentas}</b><span>cuentas</span></div><div><b>${n.ultima ? fecha(n.ultima) : '—'}</b><span>última actividad</span></div></div>
+      <p style="margin-top:10px"><span class="chip ${e.c}">${esc(e.t)}</span></p></div>
+    <div class="caja"><h3>Cobro</h3><form id="fg" novalidate>
+      <div class="dos"><div class="campo"><label>Tipo</label><select id="tp"><option value="mensualidad">Mensualidad</option><option value="unico">Pago único</option></select></div>
+      <div class="campo"><label>Cuota mensual (B/.)</label><input id="cu" inputmode="decimal"></div>
+      <div class="campo"><label>Estado</label><select id="es"><option value="prueba">En prueba</option><option value="activo">Activo</option><option value="pausado">Pausado</option></select></div>
+      <div class="campo"><label>Prueba termina</label><input id="pr" type="date"></div>
+      <div class="campo"><label>Pagado hasta</label><input id="ph" type="date"></div></div>
+      <div class="campo"><label>Notas</label><textarea id="nt"></textarea></div><button class="btn coral" id="sg">Guardar</button></form></div>
+    <div class="caja"><h3>Registrar un pago</h3><form id="fp" novalidate><div class="dos"><div class="campo"><label>Monto cobrado (B/.)</label><input id="pm" inputmode="decimal"></div>
+      <div class="campo"><label>Meses que cubre</label><select id="pn">${[1, 2, 3, 6, 12].map((m) => `<option>${m}</option>`).join('')}</select></div></div>
+      <div class="campo"><label>Nota (Yappy, transferencia…)</label><input id="pt"></div><button class="btn coral" id="sp">Registrar pago</button></form><div id="pagos" style="margin-top:12px"></div></div>
+    <div class="caja"><h3>Cuentas de ${esc(n.nombre)}</h3><div id="eq"><p class="cargando">Cargando…</p></div>
+      <p class="nota" style="margin-top:8px">Para crear cuentas nuevas o cambiar contraseñas, pídeselo a Claude por ahora.</p></div>
+    <div class="caja"><h3>Datos y copia</h3><button class="btn claro ancho" id="cp">Descargar copia en Excel</button>
+      <p class="nota" style="margin-top:8px">Clientes, visitas, canjes, regalos, membresías y actividad. Sin códigos ni claves.</p>
+      <a class="btn claro ancho" style="margin-top:10px" href="../panel/" target="_blank" rel="noopener">Abrir el panel de recepción</a></div></main>`);
+  $('#tp').value = n.tipo; $('#cu').value = n.cuota || ''; $('#es').value = n.estado; $('#pr').value = n.prueba_hasta || ''; $('#ph').value = n.pagado_hasta || ''; $('#nt').value = n.notas || ''; $('#pm').value = n.cuota || '';
+  $('#cp').onclick = () => copiaNegocio(id);
+  $('#fg').onsubmit = async (ev) => {
+    ev.preventDefault(); $('#sg').disabled = true;
+    try { await rpc('admin_guardar', { p_negocio: id, p_tipo: $('#tp').value, p_cuota: Number($('#cu').value) || 0, p_estado: $('#es').value, p_prueba: $('#pr').value || null, p_pagado: $('#ph').value || null, p_notas: $('#nt').value });
+      LISTA = await rpc('admin_lista'); toast('Guardado.'); detalle(id); } catch (x) { toast('No se pudo guardar.'); $('#sg').disabled = false; }
+  };
+  $('#fp').onsubmit = async (ev) => {
+    ev.preventDefault(); const m = Number($('#pm').value);
+    if (!(m > 0)) return toast('Escribe el monto.');
+    $('#sp').disabled = true;
+    try { const h = await rpc('admin_pago', { p_negocio: id, p_monto: m, p_meses: Number($('#pn').value), p_nota: $('#pt').value });
+      LISTA = await rpc('admin_lista'); toast('Pago registrado. Pagado hasta ' + fecha(h) + '.'); detalle(id); } catch (x) { toast('No se pudo registrar.'); $('#sp').disabled = false; }
+  };
+  try {
+    const p = await rpc('admin_pagos', { p_negocio: id });
+    $('#pagos').innerHTML = p.length ? p.map((x) => `<div class="fila-s"><div class="inf"><b>${dinero(x.monto)}</b><span>${fecha(x.fecha)} · cubre hasta ${fecha(x.hasta)}${x.nota ? ' · ' + esc(x.nota) : ''}</span></div></div>`).join('') : '<p class="nota">Sin pagos registrados todavía.</p>';
+  } catch (x) {}
+  try {
+    const q = await rpc('admin_equipo', { p_negocio: id });
+    $('#eq').innerHTML = q.map((s) => `<div class="fila-s"><div class="inf"><b>${esc(s.nombre)}</b><span>${esc(s.email)}</span></div>
+      <select data-r="${esc(s.user_id)}"><option value="dueno"${s.rol === 'dueno' ? ' selected' : ''}>Dueño</option><option value="recepcion"${s.rol === 'recepcion' ? ' selected' : ''}>Recepción</option></select>
+      <button class="btn claro mini" data-q="${esc(s.user_id)}">Quitar</button></div>`).join('') || '<p class="nota">Sin cuentas.</p>';
+    document.querySelectorAll('[data-r]').forEach((s) => (s.onchange = async () => { try { await rpc('admin_staff_rol', { p_user: s.dataset.r, p_rol: s.value }); toast('Permiso cambiado.'); } catch (x) { toast('No se pudo cambiar.'); } }));
+    document.querySelectorAll('[data-q]').forEach((b) => (b.onclick = async () => {
+      if (!confirm('¿Quitar el acceso de esta cuenta al panel? La persona ya no podrá entrar.')) return;
+      try { await rpc('admin_staff_quitar', { p_user: b.dataset.q }); toast('Acceso quitado.'); LISTA = await rpc('admin_lista'); detalle(id); } catch (x) { toast('No se pudo quitar.'); }
+    }));
+  } catch (x) {}
+}
+iniciar();
+</script>
+</body>
+</html>
