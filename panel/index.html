@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261123205857">
+<meta name="kata-version" content="20261123210311">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Acceso clientes · Kata Studio</title>
@@ -180,8 +180,8 @@ function marco() {
   $('#app').innerHTML = `<header class="barra"><div class="barra-in"><div class="mono${NEG.config.logo ? ' con-logo' : ''}">${NEG.config.logo ? `<img src="../${esc(NEG.config.logo)}" alt="">` : esc(NEG.nombre.trim()[0])}</div>
     <div><h1>${esc(NEG.nombre)}</h1><p>${esc(NEG.yo || 'Panel de recepción')}</p></div>${NEG.admin ? '<button class="salir" onclick="location.href=\'../admin/\'">← Administradora</button>' : '<button class="salir" onclick="cambiarClave()">Contraseña</button><button class="salir" style="margin-left:0" onclick="salir()">Salir</button>'}</div>
     <nav class="tabs">
-      ${MODO() === 'recepcion' ? '<button class="tab" data-t="canjear"><span class="l">Escanear cliente</span><span class="c">Escanear</span></button><button class="tab" data-t="mostrador"><span class="l">QR para crear tarjeta</span><span class="c">QR</span></button>'
-        : `<button class="tab" data-t="mostrador"><span class="l">QR del mostrador</span><span class="c">QR</span></button><button class="tab" data-t="canjear">${MODO() === 'ambos' ? '<span class="l">Escanear cliente</span><span class="c">Escanear</span>' : 'Canjear'}</button>`}
+      ${MODO() === 'recepcion' ? '<button class="tab" data-t="canjear"><span class="l">Buscar cliente</span><span class="c">Buscar</span></button><button class="tab" data-t="mostrador"><span class="l">QR para crear tarjeta</span><span class="c">QR</span></button>'
+        : `<button class="tab" data-t="mostrador"><span class="l">QR del mostrador</span><span class="c">QR</span></button><button class="tab" data-t="canjear">${MODO() === 'ambos' ? '<span class="l">Buscar cliente</span><span class="c">Buscar</span>' : 'Canjear'}</button>`}
       <button class="tab" data-t="clientes">Clientes</button>
       <button class="tab" data-t="regalos"><span class="l">Tarjetas de regalo</span><span class="c">Regalos</span></button>
       <button class="tab" data-t="vip"><span class="l">${esc((NEG.config.vip && NEG.config.vip.nombre) || 'Club')}</span><span class="c">Club</span></button>
@@ -289,7 +289,7 @@ function canjear() {
   }
   // Recepción: el cliente ya no trae ningún QR (su tarjeta muestra su código fijo), así que no hace falta cámara aquí.
   // Un solo buscador: WhatsApp, nombre o código (de cliente o de un canje) van en el mismo campo.
-  $('#cont').innerHTML = `<div id="encab"><h2 class="tit">Escanear cliente</h2><p class="sub">Busca al cliente por su WhatsApp, nombre o código.</p></div>
+  $('#cont').innerHTML = `<div id="encab"><h2 class="tit">Buscar cliente</h2><p class="sub">Busca al cliente por su WhatsApp, nombre o código.</p></div>
     <div class="grid2" id="buscador"><div class="tarjeta"><label for="bq">Buscar cliente</label><input id="bq" inputmode="search" autocomplete="off" placeholder="Buscar cliente">
     <ul class="lista" id="bres"></ul>
     <button class="btn ancho" style="margin-top:12px" onclick="buscarCod()">Buscar</button></div></div>
