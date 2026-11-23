@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261123164109">
+<meta name="kata-version" content="20261123164726">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Acceso clientes · Kata Studio</title>
@@ -326,7 +326,7 @@ function ficha(f) {
     acc += fila(esc(V.club || V.nombre), V.vencida ? 'Su membresía venció el ' + fechaCorta(V.hasta) : 'No es miembro', `<button class="btn claro" onclick="formRenovar()">${V.vencida ? 'Renovar' : 'Activar'}</button>`);
   }
   FICHA = f;
-  if (f.detalles_listos > 0) acc += fila('Descuento ' + esc((f.detalle || '').replace(/ de descuento.*/, '')), esc(NEG.config.detalle_nota || f.detalle || ''), `<button class="btn marca" onclick="accion('${f.codigo}','detalle')">Aplicar</button>`);
+  (f.detalles || []).filter((d) => d.listos > 0).forEach((d) => (acc += fila('Visita ' + d.en + ': ' + esc(d.corto || d.texto || ''), esc(NEG.config.detalle_nota || d.texto || '') + (d.listos > 1 ? ' · tiene ' + d.listos + ' pendientes' : ''), `<button class="btn marca" onclick="accion('${f.codigo}','detalle',${esc(JSON.stringify(String(d.en)))})">Aplicar</button>`)));
   if (f.premios_listos > 0) acc += fila('Premio listo', esc(f.premio || ''), `<button class="btn marca" onclick="accion('${f.codigo}','premio')">Entregar premio</button>`);
   if (f.cumple_regalo) acc += fila('Cumpleaños', esc(f.cumple_regalo) + (f.cumple_hasta && f.cumple_hasta !== hoyPty() ? ' · vale hasta el ' + fechaCorta(f.cumple_hasta) : ' · vale hoy') + (V && V.nivel === 'gold' ? ' · más su detalle Gold' : ''), `<button class="btn marca" onclick="accion('${f.codigo}','cumple')">Entregar regalo</button>`);
   $('#res').innerHTML = `<div class="tarjeta resultado"><span class="tipo">${V && V.miembro ? 'Miembro ' + esc(V.nombre) + (V.hasta ? ' · hasta el ' + fechaCorta(V.hasta) : '') : 'Cliente'}</span>
@@ -375,7 +375,7 @@ async function accion(cod, a, item) {
   $$('.accion .btn').forEach((b) => (b.disabled = true));
   try {
     const f = await rpc('ficha_accion', { p_codigo: cod, p_accion: a, p_item: item || null });
-    toast({ visita: 'Visita sumada', vip: 'Descuento del club aplicado', premio: 'Premio entregado', cumple: 'Regalo entregado', detalle: '50 % aplicado', incluido: 'Entregado: ' + item }[a], 'ok');
+    toast({ visita: 'Visita sumada', vip: 'Descuento del club aplicado', premio: 'Premio entregado', cumple: 'Regalo entregado', detalle: 'Beneficio aplicado', incluido: 'Entregado: ' + item }[a], 'ok');
     ficha(f);
   } catch (e) { toast(msg(e), 'mal'); $$('.accion .btn').forEach((b) => (b.disabled = false)); }
 }
@@ -402,7 +402,7 @@ async function buscar(cod) {
       titulo = k.cliente; det = (k.hasta ? 'Miembro activo hasta el ' + fechaCorta(k.hasta) : 'Miembro activo') + ' · ' + telBonito(k.tel);
       extra = `<ul style="margin:0 0 16px 18px;color:var(--tinta-2)">${(k.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
     } else { titulo = k.cliente; det = k.detalle + ' · ' + telBonito(k.tel); }
-    const et = { premio: 'Premio de sellos', detalle: 'Descuento de la visita 4', cumple: 'Regalo de cumpleaños', regalo: 'Tarjeta de regalo', vip: (NEG.config.vip && NEG.config.vip.nombre) || 'Club VIP' }[k.tipo];
+    const et = { premio: 'Premio de sellos', detalle: 'Beneficio de la visita ' + (k.en || ''), cumple: 'Regalo de cumpleaños', regalo: 'Tarjeta de regalo', vip: (NEG.config.vip && NEG.config.vip.nombre) || 'Club VIP' }[k.tipo];
     $('#res').innerHTML = `<div class="tarjeta resultado"><span class="tipo">${et}</span><h3>${esc(titulo)}</h3><p class="det">${esc(det)}</p>${extra}
       <button class="btn ancho" id="conf">${k.tipo === 'vip' ? 'Aplicar beneficio' : 'Confirmar entrega'}</button><button class="enlace" style="width:100%;margin-top:6px" onclick="nuevoCliente()">Cancelar</button></div>`;
     $('#conf').onclick = async () => {
@@ -612,7 +612,7 @@ async function anularRegalo(codigo, para) {
   const m = prompt(`¿Por qué se anula la tarjeta de regalo para ${para}?`); if (m === null) return;
   try { await rpc('regalo_anular', { p_codigo: codigo, p_motivo: m }); toast('Tarjeta anulada', 'ok'); listaRegalos(); } catch (e) { toast(msg(e), 'mal'); }
 }
-const ACCIONES = { visita: 'Sumó visita', premio: 'Entregó premio', detalle: 'Aplicó 50 %', cumple: 'Regalo de cumpleaños', vip: 'Descuento del club', incluido: 'Entregó incluido del club',
+const ACCIONES = { visita: 'Sumó visita', premio: 'Entregó premio', detalle: 'Aplicó beneficio', cumple: 'Regalo de cumpleaños', vip: 'Descuento del club', incluido: 'Entregó incluido del club',
   regalo_vendido: 'Vendió tarjeta de regalo', regalo_canjeado: 'Canjeó tarjeta de regalo', regalo_anulado: 'Anuló tarjeta de regalo', membresia_nueva: 'Membresía nueva', membresia_renovada: 'Renovó membresía',
   membresia_quitada: 'Quitó membresía', cliente_nuevo: 'Cliente nuevo', cliente_editado: 'Corrigió datos', cliente_borrado: 'Borró cliente', promociones: 'Cambió promociones' };
 let RES = null, QUIEN = '';
@@ -622,7 +622,7 @@ async function dueno() {
   const A = RES.este, B = RES.anterior, mes = MESES[new Date().getMonth()];
   const k = (v, ant, t, din) => { const d = v - ant; const em = ant === 0 && v === 0 ? '' : `<em class="${d > 0 ? 'sube' : d < 0 ? 'baja' : ''}">${d > 0 ? '▲ ' : d < 0 ? '▼ ' : '= '}${din ? dinero(Math.abs(d)) : Math.abs(d)} vs mes pasado</em>`; return `<div class="kpi"><b>${din ? dinero(v) : v}</b><span>${t}</span>${em}</div>`; };
   $('#cont').innerHTML = `<h2 class="tit">Resumen de ${mes}</h2><p class="sub">Del 1 hasta hoy, comparado con los mismos días del mes pasado.</p>
-    <div class="kpis">${k(A.visitas, B.visitas, 'visitas')}${k(A.nuevos, B.nuevos, 'clientes nuevos')}${k(A.volvieron, B.volvieron, 'clientes que volvieron')}${k(A.premios, B.premios, 'premios y 50 % entregados')}
+    <div class="kpis">${k(A.visitas, B.visitas, 'visitas')}${k(A.nuevos, B.nuevos, 'clientes nuevos')}${k(A.volvieron, B.volvieron, 'clientes que volvieron')}${k(A.premios, B.premios, 'premios y beneficios entregados')}
       ${k(A.regalos_n, B.regalos_n, 'tarjetas de regalo vendidas')}${k(+A.regalos_monto, +B.regalos_monto, 'en tarjetas de regalo', true)}${k(A.regalos_canjeados, B.regalos_canjeados, 'canjes de tarjetas de regalo')}${k(A.cumples, B.cumples, 'regalos de cumpleaños')}
       ${k(A.miembros_nuevos, B.miembros_nuevos, 'miembros nuevos del club')}${k(A.renovados, B.renovados, 'membresías renovadas')}<div class="kpi"><b>${RES.miembros_activos}</b><span>miembros activos</span></div><div class="kpi"><b>${RES.sin_venir}</b><span>clientes sin venir hace 30 días</span></div></div>
     <div class="grid2"><div class="tarjeta"><h2 class="tit" style="font-size:18px">Actividad</h2><p class="sub">Quién hizo qué y cuándo. Sirve para revisar si algo no cuadra.</p>
