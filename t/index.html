@@ -304,8 +304,10 @@ function pintar(animar = false) {
     <div class="cuerpo">
       ${animar ? `<div class="progreso momento" id="momento"><p>${frase}</p><div class="barra"><i id="bar"></i></div></div>` : ''}
       ${avisos.length ? `<div class="avisos">${avisos.join('')}</div>` : ''}
-      ${wa ? `<a class="agendar" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent('Hola, soy ' + E.nombre + '. Quisiera agendar una cita.')}"><span class="ic">${I.wa}</span><span><b>Agendar cita</b><span>Escríbenos por WhatsApp</span></span><span class="fl">${I.fl}</span></a>
-        <a class="regalar" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent('Hola, soy ' + E.nombre + '. Quisiera comprar una tarjeta de regalo.')}"><span class="ic">${I.regalo}</span><span><b>Regalar una visita</b><span>Tarjeta de regalo para alguien especial</span></span><span class="fl">${I.fl}</span></a>` : ''}
+      ${wa ? ((NEG.config.servicios && NEG.config.servicios.length)
+        ? `<button class="agendar" onclick="hojaServicios()"><span class="ic">${I.wa}</span><span><b>Agendar cita</b><span>Escríbenos por WhatsApp</span></span><span class="fl">${I.fl}</span></button>`
+        : `<a class="agendar" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent('Hola, soy ' + E.nombre + '. Quisiera agendar una cita.')}"><span class="ic">${I.wa}</span><span><b>Agendar cita</b><span>Escríbenos por WhatsApp</span></span><span class="fl">${I.fl}</span></a>`
+      ) + `<a class="regalar" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent('Hola, soy ' + E.nombre + '. Quisiera comprar una tarjeta de regalo.')}"><span class="ic">${I.regalo}</span><span><b>Regalar una visita</b><span>Tarjeta de regalo para alguien especial</span></span><span class="fl">${I.fl}</span></a>` : ''}
       ${V && !V.miembro ? `<button class="club-inv" onclick="hojaClub()"><span class="ic">${I.corona}</span><span><b>${esc(V.nombre)}</b><span>${PR.length ? PR.length + (PR.length === 1 ? ' promoción' : ' promociones') + ' para miembros' : (+V.cuota > 0 ? ((V.niveles || []).length > 1 ? 'Desde ' : '') + dinero(V.cuota) + ' al ' + esc(V.periodo || 'mes') : 'Ver beneficios')}</span></span><span class="fl">${I.fl}</span></button>` : ''}
       ${promos}
       <p class="guardar-l"><button class="enlace" onclick="hojaGuardar()">${I.cel} Guardar en mi celular</button></p>
@@ -393,6 +395,24 @@ function hojaPromo(i) {
     <p style="margin-top:18px;font-weight:600">¿Deseas agendarla?</p>
     ${wa ? `<a class="agendar" style="margin-top:10px" target="_blank" rel="noopener" href="https://wa.me/${wa}?text=${encodeURIComponent(txt)}" onclick="setTimeout(cerrarHoja, 400)"><span class="ic">${I.wa}</span><span><b>Agendar por WhatsApp</b></span><span class="fl">${I.fl}</span></a>` : ''}
     ${btnCerrar('Ahora no')}`);
+}
+function hojaServicios() {
+  const servicios = NEG.config.servicios || [], wa = waNegocio();
+  if (!servicios.length || !wa) return;
+  const items = servicios.map((s, i) => `<label class="check"><input type="checkbox" data-serv value="${esc(s)}" id="sv${i}"> ${esc(s)}</label>`).join('');
+  hoja(`<h3>Nuestros servicios</h3><p class="nota">Marca los que te interesan y te escribimos por WhatsApp.</p>
+    <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">${items}</div>
+    <a class="agendar" id="waServ" style="margin-top:16px" target="_blank" rel="noopener" href="#" onclick="setTimeout(cerrarHoja, 400)"><span class="ic">${I.wa}</span><span><b>Escribir por WhatsApp</b></span><span class="fl">${I.fl}</span></a>
+    ${btnCerrar('Ahora no')}`);
+  const actualizar = () => {
+    const elegidos = $$('[data-serv]').filter((c) => c.checked).map((c) => c.value);
+    const txt = elegidos.length
+      ? `Hola, soy ${ESTADO.nombre}. Quisiera agendar: ${elegidos.join(', ')}.`
+      : `Hola, soy ${ESTADO.nombre}. Quisiera agendar una cita.`;
+    $('#waServ').href = `https://wa.me/${wa}?text=${encodeURIComponent(txt)}`;
+  };
+  $$('[data-serv]').forEach((c) => (c.onchange = actualizar));
+  actualizar();
 }
 function hojaClub() {
   const V = ESTADO.vip, ben = `<ul class="lista-b" style="margin-top:10px">${(V.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;

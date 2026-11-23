@@ -61,6 +61,7 @@ const MENSAJES = {
   regalo: 'Esa tarjeta de regalo no está activa.',
   promo: 'Puedes tener hasta 6 promociones.',
   no_cliente: 'Ese WhatsApp todavía no tiene tarjeta. Primero el cliente la crea escaneando el QR del mostrador.',
+  cantidad: 'Escribe un número de sellos entre 1 y 50.',
 };
 const msg = (e) => MENSAJES[e.code] || 'Algo no funcionó. Revisa tu conexión e intenta de nuevo.';
 

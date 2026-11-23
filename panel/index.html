@@ -317,7 +317,7 @@ function nuevoCliente() {
 function ficha(f) {
   const meta = f.meta, V = f.vip, llenos = f.premios_listos > 0 && f.sellos === 0 ? meta : f.sellos;
   const fila = (titulo, detalle, boton, hecho) => `<div class="accion"><div><b>${titulo}</b><span>${detalle}</span></div>${hecho ? `<span class="hecho-chip">${hecho}</span>` : boton}</div>`;
-  let acc = fila('Visita de hoy', `${llenos} de ${meta} sellos`, `<button class="btn" onclick="accion('${f.codigo}','visita')">Sumar visita</button>`, f.hoy_sellado ? 'Ya sumada hoy' : '');
+  let acc = fila('Visita de hoy', `${llenos} de ${meta} sellos`, `<button class="btn" onclick="formVisita('${f.codigo}')">Sumar visita</button>`, f.hoy_sellado ? 'Ya sumada hoy' : '');
   if (V && V.miembro) {
     acc += fila(esc(V.nombre), (V.beneficios || []).filter((b) => /descuento/i.test(b)).map(esc).join(' · ') || (V.beneficios || []).map(esc).join(' · '), `<button class="btn" style="background:#23262B;color:#E3C27E" onclick="accion('${f.codigo}','vip')">Aplicar descuento</button>`, f.vip_hoy ? 'Aplicado hoy' : '');
     (V.incluidos || []).forEach((x) => (acc += fila('Incluido del mes', esc(x.item), `<button class="btn" style="background:#23262B;color:#E3C27E" onclick="accion('${f.codigo}','incluido',${esc(JSON.stringify(x.item))})">Entregar</button>`, x.usado ? 'Ya usado este mes' : '')));
@@ -332,7 +332,7 @@ function ficha(f) {
   $('#res').innerHTML = `<div class="tarjeta resultado"><span class="tipo">${V && V.miembro ? 'Miembro ' + esc(V.nombre) + (V.hasta ? ' · hasta el ' + fechaCorta(V.hasta) : '') : 'Cliente'}</span>
     <h3>${esc(f.nombre)}</h3><p class="det">${telBonito(f.tel)} · ${f.total_visitas} ${f.total_visitas === 1 ? 'visita' : 'visitas'} · cliente desde ${fechaCorta(f.cliente_desde)}</p>
     <div class="puntos" style="margin-bottom:14px">${Array.from({ length: meta }, (_, i) => `<i class="${i < llenos ? 'on' : ''}"></i>`).join('')}</div>
-    ${acc}<p class="nota" style="margin-top:10px">Suma la visita solo si es una compra nueva.</p><div id="renov"></div>
+    ${acc}<p class="nota" style="margin-top:10px">Suma la visita solo si es una compra nueva.</p><div id="sumaForm"></div><div id="renov"></div>
     <div class="acciones" style="margin-top:16px"><a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(f.tel)}?text=${encodeURIComponent(`Hola ${f.nombre.split(' ')[0]}, aquí tienes tu tarjeta de ${NEG.nombre}: ${BASE}t/?n=${NEG.slug} . Guárdala para ver tus sellos y beneficios.`)}">Enviarle su tarjeta por WhatsApp</a>
     <button class="btn claro" style="min-height:40px;flex:1" onclick="nuevoCliente()">Siguiente cliente</button></div>
     ${PUEDE('clientes_editar') || PUEDE('clientes_borrar') ? `<p class="nota" style="margin-top:14px;text-align:center">${[PUEDE('clientes_editar') ? `<button class="enlace" onclick="corregirCliente('${f.tel}', ${esc(JSON.stringify(f.nombre))})">Corregir datos</button>` : '', PUEDE('clientes_borrar') ? `<button class="enlace peligro" onclick="borrarCliente('${f.tel}', ${esc(JSON.stringify(f.nombre))})">Borrar cliente</button>` : ''].filter(Boolean).join(' · ')}</p>` : ''}</div>`;
@@ -352,6 +352,24 @@ async function renovarMembresia() {
     const r = await rpc('vip_activar', { p_tel: FICHA.tel, p_meses: +$('#rm').value, p_nivel: $('#rn') ? $('#rn').value : null });
     toast(`${r.nombre}: activa hasta el ${fechaCorta(r.hasta)}`, 'ok'); await abrirFicha(FICHA.tel);
   } catch (e) { $('#rerr').textContent = msg(e); $('#rgo').disabled = false; }
+}
+function formVisita(cod) {
+  const hoyDoble = (() => { try { return (NEG.config.dias_dobles || []).includes(String(new Date().getDay() === 0 ? 7 : new Date().getDay())); } catch (e) { return false; } })();
+  $('#sumaForm').innerHTML = `<div class="renov"><b>¿Cuántos sellos?</b>
+    <div class="campo"><label for="svc">Cantidad</label><input id="svc" type="number" min="1" max="50" value="${hoyDoble ? 2 : 1}" inputmode="numeric"></div>
+    <div class="campo"><label for="svn">¿Por qué es? (opcional)</label><input id="svn" autocomplete="off" placeholder="Ej. Masaje relajante"></div>
+    <p class="error" id="sverr"></p><div class="acciones"><button class="btn" id="svgo" onclick="confirmarVisita('${cod}')">Confirmar</button><button class="btn claro" onclick="$('#sumaForm').innerHTML=''">Cancelar</button></div></div>`;
+  $('#sumaForm').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+async function confirmarVisita(cod) {
+  $('#svgo').disabled = true; $('#sverr').textContent = '';
+  try {
+    const cant = Math.max(1, parseInt($('#svc').value || '1', 10));
+    const f = await rpc('ficha_accion', { p_codigo: cod, p_accion: 'visita', p_cantidad: cant, p_nota: $('#svn').value || null });
+    toast(cant > 1 ? `+${cant} sellos` : 'Visita sumada', 'ok');
+    $('#sumaForm').innerHTML = '';
+    ficha(f);
+  } catch (e) { $('#sverr').textContent = msg(e); $('#svgo').disabled = false; }
 }
 async function accion(cod, a, item) {
   $$('.accion .btn').forEach((b) => (b.disabled = true));
