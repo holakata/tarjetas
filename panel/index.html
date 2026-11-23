@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261123163254">
+<meta name="kata-version" content="20261123164109">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Acceso clientes · Kata Studio</title>
@@ -275,12 +275,12 @@ document.addEventListener('fullscreenchange', () => { if (!document.fullscreenEl
 
 /* ---------- Canjear ---------- */
 function canjear() {
-  $('#cont').innerHTML = `<div id="encab"><h2 class="tit">${MODO() === 'cliente' ? 'Canjear' : 'Escanear cliente'}</h2><p class="sub">${MODO() === 'cliente' ? 'Premios, regalos de cumpleaños y tarjetas de regalo se canjean igual: escanea el QR del cliente o escribe su código.' : 'Busca al cliente por su WhatsApp o escanea el QR de su tarjeta. Las tarjetas de regalo también se escanean aquí.'}</p></div>
+  $('#cont').innerHTML = `<div id="encab"><h2 class="tit">${MODO() === 'cliente' ? 'Canjear' : 'Escanear cliente'}</h2><p class="sub">${MODO() === 'cliente' ? 'Premios, regalos de cumpleaños y tarjetas de regalo se canjean igual: escanea el código que te muestre o escríbelo.' : 'Busca al cliente por su WhatsApp, nombre o código. La cámara es solo para tarjetas de regalo y premios/cumpleaños/club, que sí muestran un código para escanear.'}</p></div>
     <div class="grid2" id="buscador"><div class="tarjeta"><div id="lector"></div><p class="nota" id="camnota" style="margin-top:10px">El navegador te va a pedir permiso para usar la cámara.</p>
       <button class="btn claro ancho" id="camBtn" style="margin-top:10px" onclick="iniciarLector()">Abrir cámara</button></div>
-    <div>${MODO() !== 'cliente' ? `<div class="tarjeta" style="margin-bottom:16px"><label for="bq">Buscar por WhatsApp, nombre o código (MG01, CL03...)</label><input id="bq" inputmode="search" autocomplete="off" placeholder="Ej. 6123, Carla o MG01">
+    <div>${MODO() !== 'cliente' ? `<div class="tarjeta" style="margin-bottom:16px"><label for="bq">Buscar por WhatsApp, nombre o código (JB0001, CL0003...)</label><input id="bq" inputmode="search" autocomplete="off" placeholder="Ej. 6123, Carla o JB0001">
       <ul class="lista" id="bres"></ul></div>` : ''}
-      <div class="tarjeta"><label for="cod">${MODO() !== 'cliente' ? 'O escribe el código de su tarjeta' : 'Código del cliente'}</label><input id="cod" class="codigo-in" maxlength="6" autocomplete="off" placeholder="······">
+      <div class="tarjeta"><label for="cod">${MODO() !== 'cliente' ? 'O escribe el código' : 'Código del cliente'}</label><input id="cod" class="codigo-in" maxlength="6" autocomplete="off" placeholder="······">
       <button class="btn ancho" style="margin-top:12px" onclick="buscar($('#cod').value)">Buscar</button></div></div></div>
     <div id="res" class="res-solo"></div>`;
   // Cuando aparece un cliente (o una tarjeta de regalo) se oculta todo lo de buscar; «Siguiente cliente» lo vuelve a mostrar.

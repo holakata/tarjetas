@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261123163254">
+<meta name="kata-version" content="20261123164109">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#075F7A" data-marca>
 <title>Mi tarjeta</title>
@@ -91,11 +91,14 @@
   .vip-f.gold { background: linear-gradient(155deg, #3B3020 0%, #15120C 100%); color: #FBF3E2; --vacc: #E3C27E; }
   .vip-f::after { border-color: var(--vacc) !important; opacity: .35; }
   .vip-f small { color: var(--vacc); font-size: 12px; }
-  .vip-f h3 { font-family: "Gloock", serif; font-weight: 400; font-size: 28px; line-height: 1.05; margin-top: 2px; }
-  .vip-f .vig { font-size: 13px; opacity: .75; margin-top: 4px; }
+  .vip-f h3 { font-family: "Gloock", serif; font-weight: 400; font-size: 28px; line-height: 1.05; margin-top: 10px; }
   .vip-f .renueva { color: var(--vacc); opacity: 1; }
-  .vip-f .ben { margin-top: auto; font-size: 13px; line-height: 1.55; }
-  .vip-f .ben span { display: block; } .vip-f .ben span::before { content: "·"; color: var(--vacc); font-weight: 700; margin-right: 8px; }
+  .vip-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .vip-top .voltear { padding: 7px; }
+  .vip-lema { font-size: 13px; opacity: .8; margin-top: 6px; line-height: 1.4; max-width: 85%; }
+  .vip-pie { margin-top: auto; padding-top: 18px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .vip-cod { font-family: ui-monospace, Menlo, monospace; font-size: 16px; letter-spacing: .14em; font-weight: 600; opacity: .95; }
+  .vip-exp { font-size: 11px; opacity: .7; text-align: right; }
   .nivel { border-radius: 18px; padding: 16px 18px; margin-top: 12px; color: #fff; background: linear-gradient(155deg, #3B3020, #15120C); --vacc: #E3C27E; }
   .nivel.bronze { background: linear-gradient(155deg, #9A6440, #5E3A22); --vacc: #F3CBA6; }
   .nivel.platinum { background: linear-gradient(155deg, #8D959E, #454B53); --vacc: #F1F4F7; }
@@ -278,15 +281,16 @@ function pintar(animar = false) {
   }
   const vipActivo = !!(V && V.miembro), giraSellos = recep() && !vipActivo, giraVip = recep() && vipActivo;
   const atras = `<div class="cara atras"><h3>Tu código</h3><span class="num cod-grande">${esc(E.codigo_corto || '')}</span><p>Muéstraselo a recepción</p></div>`;
-  const atrasVip = `<div class="cara atras"><h3>Beneficios</h3><div class="ben-atras">${(V && V.beneficios || []).map((b) => `<p>${esc(b)}</p>`).join('')}</div><span class="num cod-grande" style="margin-top:10px">${esc(E.codigo_corto || '')}</span></div>`;
+  const atrasVip = `<div class="cara atras"><h3>Beneficios</h3><div class="ben-atras">${(V && V.beneficios || []).map((b) => `<p>${esc(b)}</p>`).join('')}</div></div>`;
   const pSellos = `<div class="pase" id="p0"><div class="giro${giraSellos ? '' : ' fija'}" onclick="voltear(this)">
       <div class="cara sellos-f"><div class="f-top"><div><small>Tarjeta de cliente</small><b>${esc(E.nombre)}</b></div><div class="cuenta">${llenos}<span> / ${meta}</span></div></div>
         <div class="grid${meta > 6 ? (meta > 8 ? ' m10' : ' m8') : ''}">${celdas}</div>
-        <div class="f-pie"><span>${esc(E.premio || '')}</span>${giraSellos ? `<span class="voltear">${I.qr}</span>` : ''}</div></div>
+        <div class="f-pie"><span>${esc(E.premio || '')}</span>${giraSellos ? `<span class="voltear">${I.giro}</span>` : ''}</div></div>
       ${giraSellos ? atras : ''}</div></div>`;
   const pVip = V && V.miembro ? `<div class="pase" id="p1"><div class="giro" onclick="voltear(this)">
-      <div class="cara vip-f ${esc(V.nivel || '')}"><small>Miembro</small><h3>${esc(V.nombre)}</h3>${V.lema ? `<p class="vip-lema">${esc(V.lema)}</p>` : ''}<div class="vig">${vigencia(V)}</div>
-        <div class="f-pie"><span>${esc(E.codigo_corto || '')}</span><span class="voltear">${I.qr}</span></div></div>
+      <div class="cara vip-f ${esc(V.nivel || '')}"><div class="vip-top"><small>Miembro</small><span class="voltear">${I.giro}</span></div>
+        <h3>${esc(V.nombre)}</h3>${V.lema ? `<p class="vip-lema">${esc(V.lema)}</p>` : ''}
+        <div class="vip-pie"><span class="vip-cod">${esc(E.codigo_corto || '')}</span><span class="vip-exp">${vigenciaCorta(V)}</span></div></div>
       ${giraVip ? atrasVip : ''}</div></div>` : '';
 
   const avisos = [];
@@ -331,12 +335,12 @@ function promosVigentes() {
   return (NEG.config.promos || []).filter((x) => x && x.titulo && (!x.hasta || x.hasta >= hoy));
 }
 
-function vigencia(V) {
-  if (!V.hasta) return 'Membresía activa';
+function vigenciaCorta(V) {
+  if (!V.hasta) return 'Activa';
   const hoy = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Panama' })); hoy.setHours(12, 0, 0, 0);
   const d = Math.round((new Date(V.hasta + 'T12:00:00') - hoy) / 864e5);
-  if (d > 7) return 'Activa hasta el ' + fechaCorta(V.hasta);
-  return `<span class="renueva">${d <= 0 ? 'Vence hoy' : d === 1 ? 'Vence mañana' : 'Vence en ' + d + ' días'}</span> · renuévala en recepción`;
+  if (d > 7) return 'Vence ' + fechaCorta(V.hasta);
+  return `<span class="renueva">${d <= 0 ? 'Vence hoy' : d === 1 ? 'Vence mañana' : 'Vence en ' + d + ' d'}</span>`;
 }
 
 function voltear(el) {
