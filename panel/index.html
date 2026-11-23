@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261123155331">
+<meta name="kata-version" content="20261123161100">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Acceso clientes · Kata Studio</title>
@@ -391,8 +391,9 @@ async function buscar(cod) {
     const k = await rpc('canje_ver', { p_codigo: cod });
     let titulo, det, extra = '';
     if (k.tipo === 'regalo') {
-      titulo = 'Para ' + k.para; det = (k.de ? 'De ' + k.de + ' · ' : '') + 'Saldo ' + dinero(k.saldo);
-      extra = `<div class="campo"><label for="mto">¿Cuánto se consumió? (máximo ${dinero(k.saldo)})</label><input id="mto" inputmode="decimal" placeholder="0.00"></div>`;
+      titulo = 'Para ' + k.para;
+      if (k.regalo_tipo === 'servicio') { det = (k.de ? 'De ' + k.de + ' · ' : '') + k.servicio; extra = ''; }
+      else { det = (k.de ? 'De ' + k.de + ' · ' : '') + 'Saldo ' + dinero(k.saldo); extra = `<div class="campo"><label for="mto">¿Cuánto se consumió? (máximo ${dinero(k.saldo)})</label><input id="mto" inputmode="decimal" placeholder="0.00"></div>`; }
     } else if (k.tipo === 'vip') {
       titulo = k.cliente; det = (k.hasta ? 'Miembro activo hasta el ' + fechaCorta(k.hasta) : 'Miembro activo') + ' · ' + telBonito(k.tel);
       extra = `<ul style="margin:0 0 16px 18px;color:var(--tinta-2)">${(k.beneficios || []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
@@ -462,24 +463,37 @@ async function clientes() {
 /* ---------- Tarjetas de regalo ---------- */
 async function regalos() {
   const vd = new Date(); vd.setMonth(vd.getMonth() + 3); const vence = vd.toISOString().slice(0, 10);
-  $('#cont').innerHTML = `<div class="grid2"><div class="tarjeta"><h2 class="tit">Nueva tarjeta de regalo</h2><p class="sub">Escribe el monto que pidió el cliente. Vale 3 meses.</p>
+  $('#cont').innerHTML = `<div class="grid2"><div class="tarjeta"><h2 class="tit">Nueva tarjeta de regalo</h2><p class="sub">Por monto: el cliente paga esa cantidad y la va gastando. Por servicio: tú ya sabes cuánto cobrar por ese servicio, la tarjeta solo dice cuál es. Vale 3 meses.</p>
     <form id="f" novalidate>
-      <div class="campo"><label for="mt">Monto (B/.)</label><input id="mt" inputmode="decimal" placeholder="50"></div>
-      <div class="campo"><label for="sv">Servicio (opcional)</label><input id="sv" placeholder="Ej. Masaje relajante 1 hora"><p class="nota" style="margin-top:6px">Se muestra en la tarjeta además del monto. El valor que se cobra y se descuenta sigue siendo el monto.</p></div>
+      <div class="campo"><label>Tipo de tarjeta</label>
+        <div style="display:flex;gap:18px;margin-top:6px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--tinta)"><input type="radio" name="tr" id="tr-monto" value="monto" checked> Por monto</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--tinta)"><input type="radio" name="tr" id="tr-servicio" value="servicio"> Por servicio</label>
+        </div>
+      </div>
+      <div class="campo" id="camp-mt"><label for="mt">Monto (B/.)</label><input id="mt" inputmode="decimal" placeholder="50"></div>
+      <div class="campo" id="camp-sv" style="display:none"><label for="sv">Servicio</label><input id="sv" placeholder="Ej. Masaje relajante 1 hora"></div>
       <div class="fila"><div class="campo"><label for="pa">Para</label><input id="pa" placeholder="Mamá"></div><div class="campo"><label for="de">De</label><input id="de" placeholder="Andrea"></div></div>
       <div class="campo"><label for="wt">WhatsApp de quien la recibe</label><input id="wt" inputmode="tel" placeholder="6000-0000"><p class="nota" style="margin-top:6px">Si quien la compra prefiere mandarla él, pon su número.</p></div>
       <div class="campo"><label for="ms">Mensaje (opcional)</label><textarea id="ms" maxlength="180" placeholder="Para que te consientas un rato."></textarea></div>
       <div class="campo"><label for="vc">Válida hasta</label><input id="vc" type="date" value="${vence}"></div>
       <p class="error" id="err"></p><button class="btn ancho" id="go">Crear tarjeta de regalo</button></form><div id="hecho"></div></div>
     <div class="tarjeta"><h2 class="tit" style="font-size:18px">Tarjetas creadas</h2><div class="filtros" id="fil"></div><ul class="lista" id="lst"><li class="vacio">Cargando…</li></ul></div></div>`;
+  const porServicio = () => $('#tr-servicio').checked;
+  $$('input[name="tr"]').forEach((rd) => (rd.onchange = () => {
+    $('#camp-mt').style.display = porServicio() ? 'none' : '';
+    $('#camp-sv').style.display = porServicio() ? '' : 'none';
+    $('#err').textContent = '';
+  }));
   $('#f').onsubmit = async (ev) => {
     ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
     try {
+      if (porServicio() && !$('#sv').value.trim()) { $('#err').textContent = 'Escribe el servicio.'; $('#go').disabled = false; return; }
       const r = await rpc('regalo_crear', { p_para: $('#pa').value, p_de: $('#de').value, p_mensaje: $('#ms').value,
-        p_monto: parseFloat(($('#mt').value || '').replace(',', '.')), p_vence: $('#vc').value || null, p_tel: $('#wt').value || null, p_servicio: $('#sv').value || null });
+        p_monto: porServicio() ? null : parseFloat(($('#mt').value || '').replace(',', '.')), p_vence: $('#vc').value || null, p_tel: $('#wt').value || null, p_servicio: $('#sv').value || null });
       const link = `${BASE}regalo/?g=${r.codigo}`, para = $('#pa').value.trim();
       const txt = textoRegalo(para, $('#de').value.trim(), link);
-      $('#f').reset(); $('#vc').value = vence;
+      $('#f').reset(); $('#vc').value = vence; $('#camp-mt').style.display = ''; $('#camp-sv').style.display = 'none';
       $('#hecho').innerHTML = `<div class="creado"><b>Lista la tarjeta para ${esc(para)}</b><div class="link">${esc(link)}</div>
         <div class="acciones">${r.tel ? `<a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(r.tel)}?text=${encodeURIComponent(txt)}">Enviar a ${esc(telBonito(r.tel))}</a>` : ''}
         <a class="${r.tel ? 'btn claro' : 'wa'}" style="min-height:40px" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(txt)}">${r.tel ? 'Enviar a otro número' : 'Enviar por WhatsApp'}</a>
@@ -651,8 +665,9 @@ function pintarRegalos() {
     const cuando = st === 'vencida' ? 'venció el ' + fechaCorta(g.vence) : st === 'usada' || st === 'anulada' ? 'creada el ' + fechaCorta(g.creado) : g.vence ? 'vence el ' + fechaCorta(g.vence) : 'sin vencimiento';
     const txt = st === 'pronto' ? `Hola ${g.para}, te recordamos que tu tarjeta de regalo de ${NEG.nombre} vence el ${fechaCorta(g.vence)}. ¿Te agendamos tu cita? ${BASE}regalo/?g=${g.codigo}` : textoRegalo(g.para, g.de, BASE + 'regalo/?g=' + g.codigo);
     const activa = st === 'activa' || st === 'pronto';
-    return `<li class="rg"><div class="info"><b>Para ${esc(g.para)}${g.servicio ? ' · ' + esc(g.servicio) : ''}</b>
-      <span>${g.de ? 'De ' + esc(g.de) + ' · ' : ''}${st === 'usada' || st === 'anulada' ? dinero(g.monto) : 'quedan ' + dinero(g.saldo) + ' de ' + dinero(g.monto)} · ${cuando}</span></div>
+    const valor = g.tipo === 'servicio' ? esc(g.servicio) : (g.servicio ? esc(g.servicio) + ' · ' : '') + (st === 'usada' || st === 'anulada' ? dinero(g.monto) : 'quedan ' + dinero(g.saldo) + ' de ' + dinero(g.monto));
+    return `<li class="rg"><div class="info"><b>Para ${esc(g.para)}</b>
+      <span>${g.de ? 'De ' + esc(g.de) + ' · ' : ''}${valor} · ${cuando}</span></div>
       <div class="rg-acc"><span class="estado ${st === 'anulada' ? 'usada' : st}">${et}</span>
       ${g.completo === false ? '' : `<details class="menu"><summary aria-label="Más opciones">⋯</summary><div class="menu-op">
         <a target="_blank" href="${BASE}regalo/?g=${g.codigo}">Ver tarjeta</a>

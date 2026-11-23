@@ -47,6 +47,7 @@ const MENSAJES = {
   usado: 'Ese código ya se usó.',
   expirado: 'Ese código venció. Pide al cliente que lo vuelva a abrir.',
   monto: 'Revisa el monto.',
+  monto_o_servicio: 'Escribe el monto o el servicio.',
   para: 'Escribe para quién es.',
   sin_vip: 'Esta membresía no está activa.',
   vip_cuota: 'La membresía se activa en recepción.',

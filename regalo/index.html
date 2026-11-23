@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261123155331">
+<meta name="kata-version" content="20261123161100">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Tarjeta de regalo</title>
@@ -101,20 +101,21 @@ async function cargar() {
 
 function pintar(desdeSobre) {
   const activa = R.estado === 'activa';
-  const valor = dinero(R.saldo);
+  const porServicio = R.tipo === 'servicio';
+  const valor = porServicio ? '' : dinero(R.saldo);
   const etiqueta = { usada: 'Ya usada', vencida: 'Vencida', anulada: 'Anulada' }[R.estado];
   $('#vista').innerHTML = `
     <div class="intro">${R.negocio.config.logo ? `<img class="logo-r" src="../${esc(R.negocio.config.logo)}" alt="">` : ''}<p>${R.de ? esc(R.de) + ' te regaló' : 'Te regalaron'}</p><h1>Una visita a ${esc(R.negocio.nombre)}</h1></div>
     <div class="giftcard${desdeSobre ? ' desde-sobre brilla' : ''}">${etiqueta ? `<span class="sello-estado">${etiqueta}</span>` : ''}
       <div class="neg">${esc(R.negocio.nombre)}</div>
-      <div><div class="que">${R.servicio ? esc(R.servicio) : (R.saldo < R.monto ? 'Saldo disponible' : 'Tarjeta de regalo por')}</div><div class="valor">${valor}</div></div>
+      <div><div class="que">${porServicio ? esc(R.servicio) : (R.servicio ? esc(R.servicio) + ' · ' : '') + (R.saldo < R.monto ? 'Saldo disponible' : 'Tarjeta de regalo por')}</div><div class="valor">${valor}</div></div>
       <div class="pd"><span>Para: ${esc(R.para)}</span>${R.vence ? `<span>Hasta el ${fechaCorta(R.vence)}</span>` : ''}</div>
     </div>
     ${R.mensaje ? `<div class="mensaje">“${esc(R.mensaje)}”${R.de ? `<span>${esc(R.de)}</span>` : ''}</div>` : ''}
     <div class="datos">
       <div><span>Cómo usarla</span><span>Muéstrala en recepción</span></div>
       ${R.negocio.config.whatsapp ? `<div><span>Para agendar</span><a href="https://wa.me/${(() => { const t = String(R.negocio.config.whatsapp).replace(/\D/g, ''); return t.length === 8 ? '507' + t : t; })()}?text=${encodeURIComponent('Hola, tengo una tarjeta de regalo y quisiera agendar una cita.')}" target="_blank" rel="noopener" style="color:var(--marca-2);font-weight:600">WhatsApp</a></div>` : ''}
-      ${R.usos.length ? `<div><span>Usado hasta hoy</span><span>${dinero(R.monto - R.saldo)}</span></div>` : ''}
+      ${!porServicio && R.usos.length ? `<div><span>Usado hasta hoy</span><span>${dinero(R.monto - R.saldo)}</span></div>` : ''}
     </div>
     <div class="acc">${activa ? '<button class="btn ancho" onclick="usar()">Usar en recepción</button>' : ''}</div>`;
 }
@@ -145,7 +146,8 @@ const LAZO = `<svg viewBox="0 0 120 100" aria-hidden="true">
   <rect x="51" y="36" width="18" height="20" rx="6" fill="url(#sat)" style="stroke:var(--marca-2)" stroke-width="1"/></svg>`;
 
 function sobre() {
-  const valor = dinero(R.saldo);
+  const porServicio = R.tipo === 'servicio';
+  const valor = porServicio ? '' : dinero(R.saldo);
   const e = document.createElement('div'); e.className = 'escena'; e.id = 'escena';
   e.innerHTML = `<div class="de"><p>${R.de ? esc(R.de) + ' te envió un regalo' : 'Te enviaron un regalo'}</p><h1>Para ${esc(R.para)}</h1></div>
     <div class="sobre" role="button" aria-label="Abrir el regalo" tabindex="0">
