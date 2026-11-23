@@ -97,6 +97,15 @@
   .vip-top .voltear { padding: 7px; }
   .vip-lema { font-size: 13px; opacity: .8; margin-top: 6px; line-height: 1.4; max-width: 85%; }
   .vip-pie { margin-top: auto; padding-top: 18px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .cara.atras.vip-f { align-items: flex-start; justify-content: flex-start; text-align: left; padding: 18px 20px; gap: 0;
+    background: linear-gradient(155deg, #2A2C31 0%, #111214 100%); color: #F4EBDD; }
+  .cara.atras.vip-f.bronze { background: linear-gradient(155deg, #9A6440 0%, #5E3A22 100%); color: #FFF4EA; }
+  .cara.atras.vip-f.platinum { background: linear-gradient(155deg, #8D959E 0%, #454B53 100%); color: #FFFFFF; }
+  .cara.atras.vip-f.gold { background: linear-gradient(155deg, #3B3020 0%, #15120C 100%); color: #FBF3E2; }
+  .cara.atras.vip-f h3 { font-family: "Gloock", serif; font-weight: 400; font-size: 19px; color: inherit; margin: 4px 0 10px; }
+  .cara.atras.vip-f .ben-atras { opacity: .92; max-height: none; }
+  .cara.atras.vip-f .ben-atras p { color: inherit; }
+  .cara.atras.vip-f .ben-atras p::before { color: var(--vacc); }
   .vip-cod { font-family: ui-monospace, Menlo, monospace; font-size: 16px; letter-spacing: .14em; font-weight: 600; opacity: .95; }
   .vip-exp { font-size: 11px; opacity: .7; text-align: right; }
   .nivel { border-radius: 18px; padding: 16px 18px; margin-top: 12px; color: #fff; background: linear-gradient(155deg, #3B3020, #15120C); --vacc: #E3C27E; }
@@ -281,7 +290,7 @@ function pintar(animar = false) {
   }
   const vipActivo = !!(V && V.miembro), giraSellos = recep() && !vipActivo, giraVip = recep() && vipActivo;
   const atras = `<div class="cara atras"><h3>Tu código</h3><span class="num cod-grande">${esc(E.codigo_corto || '')}</span><p>Muéstraselo a recepción</p></div>`;
-  const atrasVip = `<div class="cara atras"><h3>Beneficios</h3><div class="ben-atras">${(V && V.beneficios || []).map((b) => `<p>${esc(b)}</p>`).join('')}</div></div>`;
+  const atrasVip = `<div class="cara atras vip-f ${esc((V && V.nivel) || '')}"><small>${esc((V && V.nombre) || 'Miembro')}</small><h3>Beneficios</h3><div class="ben-atras">${(V && V.beneficios || []).map((b) => `<p>${esc(b)}</p>`).join('')}</div></div>`;
   const pSellos = `<div class="pase" id="p0"><div class="giro${giraSellos ? '' : ' fija'}" onclick="voltear(this)">
       <div class="cara sellos-f"><div class="f-top"><div><small>Tarjeta de cliente</small><b>${esc(E.nombre)}</b></div><div class="cuenta">${llenos}<span> / ${meta}</span></div></div>
         <div class="grid${meta > 6 ? (meta > 8 ? ' m10' : ' m8') : ''}">${celdas}</div>
