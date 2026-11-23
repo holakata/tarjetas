@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261123170708">
+<meta name="kata-version" content="20261123200726">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#075F7A" data-marca>
 <title>Mi tarjeta</title>
@@ -241,6 +241,12 @@ const I = {
   loto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4 0-7-2.3-7-5.2 2.7 0 5 1 7 2.9 2-1.9 4.3-2.9 7-2.9 0 2.9-3 5.2-7 5.2z"/><path d="M12 17.5V13M12 13c0-4 1.6-6.8 4-8.7-1 3.6-.6 6.4 1.3 9M12 13c0-4-1.6-6.8-4-8.7 1 3.6.6 6.4-1.3 9"/></svg>',
 };
 
+const ICONOS_SELLO = { detox: 'iconos-sellos/detox.png', facial: 'iconos-sellos/facial.png', masaje: 'iconos-sellos/masaje.png' };
+function selloImg(nombre) {
+  const src = ICONOS_SELLO[nombre];
+  return src ? `<img src="${src}" alt="" style="width:76%;height:76%;object-fit:contain">` : null;
+}
+
 async function iniciar() {
   try {
     NEG = await rpc('negocio_info', { p_slug: slug });
@@ -283,9 +289,14 @@ function pintar(animar = false) {
   let celdas = '';
   for (let i = 1; i <= meta; i++) {
     if (i <= llenos) celdas += `<div class="s on${animar && i === llenos ? ' nuevo' : ''}">${I.loto}</div>`;
-    else if (i === meta) celdas += `<div class="s meta det">${esc(E.premio_corto || 'Premio')}</div>`;
-    else if ((E.detalles || []).find((d) => d.en === i)) celdas += `<div class="s det">${esc((E.detalles.find((d) => d.en === i) || {}).corto || '')}</div>`;
-    else celdas += `<div class="s"></div>`;
+    else if (i === meta) {
+      const img = selloImg(E.premio_icono);
+      celdas += img ? `<div class="s meta">${img}</div>` : `<div class="s meta det">${esc(E.premio_corto || 'Premio')}</div>`;
+    } else {
+      const d = (E.detalles || []).find((d) => d.en === i);
+      if (d) { const img = selloImg(d.icono); celdas += img ? `<div class="s meta">${img}</div>` : `<div class="s det">${esc(d.corto || '')}</div>`; }
+      else celdas += `<div class="s"></div>`;
+    }
   }
   const vipActivo = !!(V && V.miembro), giraSellos = recep() && !vipActivo, giraVip = recep() && vipActivo;
   const atras = `<div class="cara atras"><h3>Tu código</h3><span class="num cod-grande">${esc(E.codigo_corto || '')}</span><p>Muéstraselo a recepción</p></div>`;
@@ -489,7 +500,12 @@ async function pedir(tipo, en) {
 function bienvenida() {
   const c = NEG.config, meta = c.meta || 6, detalles = c.detalles || [];
   let celdas = '';
-  for (let i = 1; i <= meta; i++) celdas += i === meta ? `<div class="s meta det">${esc(c.premio_corto || c.premio || 'Premio')}</div>` : detalles.find((d) => d.en === i) ? `<div class="s det">${esc((detalles.find((d) => d.en === i) || {}).corto || '')}</div>` : `<div class="s${i <= 2 ? ' on' : ''}">${i <= 2 ? I.loto : ''}</div>`;
+  for (let i = 1; i <= meta; i++) {
+    const d = detalles.find((d) => d.en === i);
+    if (i === meta) { const img = selloImg(c.premio_icono); celdas += img ? `<div class="s meta">${img}</div>` : `<div class="s meta det">${esc(c.premio_corto || c.premio || 'Premio')}</div>`; }
+    else if (d) { const img = selloImg(d.icono); celdas += img ? `<div class="s meta">${img}</div>` : `<div class="s det">${esc(d.corto || '')}</div>`; }
+    else celdas += `<div class="s${i <= 2 ? ' on' : ''}">${i <= 2 ? I.loto : ''}</div>`;
+  }
   $('#vista').innerHTML = `<div style="height:26px"></div>
     <div class="wallet uno" style="pointer-events:none"><div class="pase"><div class="giro"><div class="cara sellos-f">
       <div class="f-top"><div><small>Tarjeta de cliente</small><b>Tu nombre</b></div><div class="cuenta">2<span> / ${meta}</span></div></div>
