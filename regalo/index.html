@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261115181429">
+<meta name="kata-version" content="20261123155331">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Tarjeta de regalo</title>
@@ -107,7 +107,7 @@ function pintar(desdeSobre) {
     <div class="intro">${R.negocio.config.logo ? `<img class="logo-r" src="../${esc(R.negocio.config.logo)}" alt="">` : ''}<p>${R.de ? esc(R.de) + ' te regaló' : 'Te regalaron'}</p><h1>Una visita a ${esc(R.negocio.nombre)}</h1></div>
     <div class="giftcard${desdeSobre ? ' desde-sobre brilla' : ''}">${etiqueta ? `<span class="sello-estado">${etiqueta}</span>` : ''}
       <div class="neg">${esc(R.negocio.nombre)}</div>
-      <div><div class="que">${R.saldo < R.monto ? 'Saldo disponible' : 'Tarjeta de regalo por'}</div><div class="valor">${valor}</div></div>
+      <div><div class="que">${R.servicio ? esc(R.servicio) : (R.saldo < R.monto ? 'Saldo disponible' : 'Tarjeta de regalo por')}</div><div class="valor">${valor}</div></div>
       <div class="pd"><span>Para: ${esc(R.para)}</span>${R.vence ? `<span>Hasta el ${fechaCorta(R.vence)}</span>` : ''}</div>
     </div>
     ${R.mensaje ? `<div class="mensaje">“${esc(R.mensaje)}”${R.de ? `<span>${esc(R.de)}</span>` : ''}</div>` : ''}
@@ -150,7 +150,7 @@ function sobre() {
   e.innerHTML = `<div class="de"><p>${R.de ? esc(R.de) + ' te envió un regalo' : 'Te enviaron un regalo'}</p><h1>Para ${esc(R.para)}</h1></div>
     <div class="sobre" role="button" aria-label="Abrir el regalo" tabindex="0">
       <div class="s-sombra"></div><div class="s-fondo"></div>
-      <div class="carta"><div class="neg">${esc(R.negocio.nombre)}</div><div><div class="que">Tarjeta de regalo</div><div class="valor">${valor}</div></div><div class="pd"><span>Para: ${esc(R.para)}</span></div></div>
+      <div class="carta"><div class="neg">${esc(R.negocio.nombre)}</div><div><div class="que">${R.servicio ? esc(R.servicio) : 'Tarjeta de regalo'}</div><div class="valor">${valor}</div></div><div class="pd"><span>Para: ${esc(R.para)}</span></div></div>
       <div class="s-frente"></div><div class="s-solapa"></div>
       <div class="cinta-v"></div><div class="cinta-h"></div><div class="lazo">${LAZO}</div>
     </div>

@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261115181429">
+<meta name="kata-version" content="20261123155331">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Acceso clientes · Kata Studio</title>
@@ -278,7 +278,7 @@ function canjear() {
   $('#cont').innerHTML = `<div id="encab"><h2 class="tit">${MODO() === 'cliente' ? 'Canjear' : 'Escanear cliente'}</h2><p class="sub">${MODO() === 'cliente' ? 'Premios, regalos de cumpleaños y tarjetas de regalo se canjean igual: escanea el QR del cliente o escribe su código.' : 'Busca al cliente por su WhatsApp o escanea el QR de su tarjeta. Las tarjetas de regalo también se escanean aquí.'}</p></div>
     <div class="grid2" id="buscador"><div class="tarjeta"><div id="lector"></div><p class="nota" id="camnota" style="margin-top:10px">El navegador te va a pedir permiso para usar la cámara.</p>
       <button class="btn claro ancho" id="camBtn" style="margin-top:10px" onclick="iniciarLector()">Abrir cámara</button></div>
-    <div>${MODO() !== 'cliente' ? `<div class="tarjeta" style="margin-bottom:16px"><label for="bq">Buscar por WhatsApp o nombre</label><input id="bq" inputmode="search" autocomplete="off" placeholder="Ej. 6123 o Carla">
+    <div>${MODO() !== 'cliente' ? `<div class="tarjeta" style="margin-bottom:16px"><label for="bq">Buscar por WhatsApp, nombre o código (MG01, CL03...)</label><input id="bq" inputmode="search" autocomplete="off" placeholder="Ej. 6123, Carla o MG01">
       <ul class="lista" id="bres"></ul></div>` : ''}
       <div class="tarjeta"><label for="cod">${MODO() !== 'cliente' ? 'O escribe el código de su tarjeta' : 'Código del cliente'}</label><input id="cod" class="codigo-in" maxlength="6" autocomplete="off" placeholder="······">
       <button class="btn ancho" style="margin-top:12px" onclick="buscar($('#cod').value)">Buscar</button></div></div></div>
@@ -292,7 +292,7 @@ function canjear() {
     const q = bq.value.trim(); if (q.length < 2) { $('#bres').innerHTML = ''; return; }
     try {
       const L = await rpc('ficha_buscar', { p_q: q });
-      $('#bres').innerHTML = L.length ? L.map((c) => `<li style="cursor:pointer" onclick="abrirFicha('${c.tel}')"><div class="av">${esc(c.nombre.trim()[0])}</div><div class="info"><b>${esc(c.nombre)}</b><span>${telBonito(c.tel)}</span></div><span class="enlace">Abrir</span></li>`).join('')
+      $('#bres').innerHTML = L.length ? L.map((c) => `<li style="cursor:pointer" onclick="abrirFicha('${c.tel}')"><div class="av">${esc(c.nombre.trim()[0])}</div><div class="info"><b>${esc(c.nombre)}</b><span>${telBonito(c.tel)}${c.codigo_corto ? ' · ' + esc(c.codigo_corto) : ''}</span></div><span class="enlace">Abrir</span></li>`).join('')
         : '<li class="vacio">No hay clientes con ese dato. Si es su primera vez, que escanee el QR para crear su tarjeta.</li>';
     } catch (e) { toast(msg(e), 'mal'); }
   }, 250); };
@@ -330,7 +330,7 @@ function ficha(f) {
   if (f.premios_listos > 0) acc += fila('Premio listo', esc(f.premio || ''), `<button class="btn marca" onclick="accion('${f.codigo}','premio')">Entregar premio</button>`);
   if (f.cumple_regalo) acc += fila('Cumpleaños', esc(f.cumple_regalo) + (f.cumple_hasta && f.cumple_hasta !== hoyPty() ? ' · vale hasta el ' + fechaCorta(f.cumple_hasta) : ' · vale hoy') + (V && V.nivel === 'gold' ? ' · más su detalle Gold' : ''), `<button class="btn marca" onclick="accion('${f.codigo}','cumple')">Entregar regalo</button>`);
   $('#res').innerHTML = `<div class="tarjeta resultado"><span class="tipo">${V && V.miembro ? 'Miembro ' + esc(V.nombre) + (V.hasta ? ' · hasta el ' + fechaCorta(V.hasta) : '') : 'Cliente'}</span>
-    <h3>${esc(f.nombre)}</h3><p class="det">${telBonito(f.tel)} · ${f.total_visitas} ${f.total_visitas === 1 ? 'visita' : 'visitas'} · cliente desde ${fechaCorta(f.cliente_desde)}</p>
+    <h3>${esc(f.nombre)}</h3><p class="det">${telBonito(f.tel)}${f.codigo_corto ? ' · ' + esc(f.codigo_corto) : ''} · ${f.total_visitas} ${f.total_visitas === 1 ? 'visita' : 'visitas'} · cliente desde ${fechaCorta(f.cliente_desde)}</p>
     <div class="puntos" style="margin-bottom:14px">${Array.from({ length: meta }, (_, i) => `<i class="${i < llenos ? 'on' : ''}"></i>`).join('')}</div>
     ${acc}<p class="nota" style="margin-top:10px">Suma la visita solo si es una compra nueva.</p><div id="sumaForm"></div><div id="renov"></div>
     <div class="acciones" style="margin-top:16px"><a class="wa" target="_blank" rel="noopener" href="https://wa.me/${waNum(f.tel)}?text=${encodeURIComponent(`Hola ${f.nombre.split(' ')[0]}, aquí tienes tu tarjeta de ${NEG.nombre}: ${BASE}t/?n=${NEG.slug} . Guárdala para ver tus sellos y beneficios.`)}">Enviarle su tarjeta por WhatsApp</a>
@@ -421,7 +421,7 @@ async function clientes() {
   const cumple = DATOS.lista.filter((c) => c.cumple_mes === mes);
   const lejos = DATOS.lista.filter((c) => c.dias_sin_venir !== null && c.dias_sin_venir >= 30);
   const fila = (c, accion = '') => `<li style="cursor:pointer" onclick="if(!event.target.closest('a')){ir('canjear').then(()=>abrirFicha('${c.tel}'))}"><div class="av">${esc(c.nombre.trim()[0])}</div><div class="info"><b>${esc(c.nombre)}</b>
-      <span>${telBonito(c.tel)} · ${c.dias_sin_venir === null ? 'sin visitas' : c.dias_sin_venir === 0 ? 'hoy' : c.dias_sin_venir === 1 ? 'ayer' : 'hace ' + c.dias_sin_venir + ' días'}</span></div>
+      <span>${telBonito(c.tel)}${c.codigo_corto ? ' · ' + esc(c.codigo_corto) : ''} · ${c.dias_sin_venir === null ? 'sin visitas' : c.dias_sin_venir === 0 ? 'hoy' : c.dias_sin_venir === 1 ? 'ayer' : 'hace ' + c.dias_sin_venir + ' días'}</span></div>
       ${c.vip ? '<span class="chip club">Club</span>' : ''}${c.premios_listos > 0 ? '<span class="chip">Premio</span>' : accion ? '' : `<span class="mini">${c.sellos}/${meta}</span>`}${accion}</li>`;
   const waTxt = (c, tipo) => {
     const n = c.nombre.split(' ')[0], link = `${BASE}t/?n=${NEG.slug}`;
@@ -443,13 +443,13 @@ async function clientes() {
   $('#cont').innerHTML = `<div class="stats"><div class="stat"><b>${DATOS.clientes}</b><span>clientes</span></div>
       <div class="stat"><b>${DATOS.sellos_mes}</b><span>sellos del mes</span></div><div class="stat"><b>${DATOS.premios_mes}</b><span>premios del mes</span></div></div>
     <div class="tarjeta"><div class="filtros" id="gru"></div><p class="nota oculto" id="gnota" style="margin:2px 0 8px"></p>
-      <input id="bus" placeholder="Buscar por nombre o WhatsApp" style="margin-bottom:6px"><ul class="lista" id="todos"></ul></div>`;
+      <input id="bus" placeholder="Buscar por nombre, WhatsApp o código" style="margin-bottom:6px"><ul class="lista" id="todos"></ul></div>`;
   const pintar = () => {
     const q = $('#bus').value.toLowerCase().trim(), g = G[grupo];
     $('#gru').innerHTML = Object.entries(G).filter(([k, x]) => k === 'todos' || x.l.length).map(([k, x]) => `<button class="${k === grupo ? 'on' : ''}" data-g="${k}">${x.t}<i>${x.l.length}</i></button>`).join('');
     $$('#gru button').forEach((b) => (b.onclick = () => { grupo = b.dataset.g; pintar(); }));
     $('#gnota').textContent = g.nota || ''; $('#gnota').classList.toggle('oculto', !g.nota);
-    const f = g.l.filter((c) => !q || c.nombre.toLowerCase().includes(q) || c.tel.includes(q.replace(/\D/g, '') || '§'));
+    const f = g.l.filter((c) => !q || c.nombre.toLowerCase().includes(q) || c.tel.includes(q.replace(/\D/g, '') || '§') || (c.codigo_corto || '').toLowerCase() === q);
     const lejano = (c) => c.dias_sin_venir !== null && c.dias_sin_venir >= 30;
     if (grupo === 'todos' && f.some(lejano) && f.some((c) => !lejano(c))) {
       $('#todos').innerHTML = f.filter((c) => !lejano(c)).map((c) => fila(c)).join('')
@@ -465,6 +465,7 @@ async function regalos() {
   $('#cont').innerHTML = `<div class="grid2"><div class="tarjeta"><h2 class="tit">Nueva tarjeta de regalo</h2><p class="sub">Escribe el monto que pidió el cliente. Vale 3 meses.</p>
     <form id="f" novalidate>
       <div class="campo"><label for="mt">Monto (B/.)</label><input id="mt" inputmode="decimal" placeholder="50"></div>
+      <div class="campo"><label for="sv">Servicio (opcional)</label><input id="sv" placeholder="Ej. Masaje relajante 1 hora"><p class="nota" style="margin-top:6px">Se muestra en la tarjeta además del monto. El valor que se cobra y se descuenta sigue siendo el monto.</p></div>
       <div class="fila"><div class="campo"><label for="pa">Para</label><input id="pa" placeholder="Mamá"></div><div class="campo"><label for="de">De</label><input id="de" placeholder="Andrea"></div></div>
       <div class="campo"><label for="wt">WhatsApp de quien la recibe</label><input id="wt" inputmode="tel" placeholder="6000-0000"><p class="nota" style="margin-top:6px">Si quien la compra prefiere mandarla él, pon su número.</p></div>
       <div class="campo"><label for="ms">Mensaje (opcional)</label><textarea id="ms" maxlength="180" placeholder="Para que te consientas un rato."></textarea></div>
@@ -475,7 +476,7 @@ async function regalos() {
     ev.preventDefault(); $('#go').disabled = true; $('#err').textContent = '';
     try {
       const r = await rpc('regalo_crear', { p_para: $('#pa').value, p_de: $('#de').value, p_mensaje: $('#ms').value,
-        p_monto: parseFloat(($('#mt').value || '').replace(',', '.')), p_vence: $('#vc').value || null, p_tel: $('#wt').value || null });
+        p_monto: parseFloat(($('#mt').value || '').replace(',', '.')), p_vence: $('#vc').value || null, p_tel: $('#wt').value || null, p_servicio: $('#sv').value || null });
       const link = `${BASE}regalo/?g=${r.codigo}`, para = $('#pa').value.trim();
       const txt = textoRegalo(para, $('#de').value.trim(), link);
       $('#f').reset(); $('#vc').value = vence;
@@ -527,7 +528,7 @@ async function vip() {
   $('#vq').oninput = () => { $('#vt').value = ''; clearTimeout(tv); tv = setTimeout(async () => {
     const q = $('#vq').value.trim(); if (q.length < 2) { $('#vres').innerHTML = ''; return; }
     try { const L = await rpc('ficha_buscar', { p_q: q });
-      $('#vres').innerHTML = L.length ? L.map((c) => `<li style="cursor:pointer" onclick="elegirCliente('${c.tel}', ${esc(JSON.stringify(c.nombre))})"><div class="av">${esc(c.nombre.trim()[0])}</div><div class="info"><b>${esc(c.nombre)}</b><span>${telBonito(c.tel)}</span></div><span class="enlace">Elegir</span></li>`).join('') : '<li class="vacio">No hay clientes con ese dato. Primero debe crear su tarjeta escaneando el QR.</li>';
+      $('#vres').innerHTML = L.length ? L.map((c) => `<li style="cursor:pointer" onclick="elegirCliente('${c.tel}', ${esc(JSON.stringify(c.nombre))})"><div class="av">${esc(c.nombre.trim()[0])}</div><div class="info"><b>${esc(c.nombre)}</b><span>${telBonito(c.tel)}${c.codigo_corto ? ' · ' + esc(c.codigo_corto) : ''}</span></div><span class="enlace">Elegir</span></li>`).join('') : '<li class="vacio">No hay clientes con ese dato. Primero debe crear su tarjeta escaneando el QR.</li>';
     } catch (e) { toast(msg(e), 'mal'); } }, 250); };
   $('#vbus').oninput = pintarVip;
   listaVip();
@@ -650,7 +651,7 @@ function pintarRegalos() {
     const cuando = st === 'vencida' ? 'venció el ' + fechaCorta(g.vence) : st === 'usada' || st === 'anulada' ? 'creada el ' + fechaCorta(g.creado) : g.vence ? 'vence el ' + fechaCorta(g.vence) : 'sin vencimiento';
     const txt = st === 'pronto' ? `Hola ${g.para}, te recordamos que tu tarjeta de regalo de ${NEG.nombre} vence el ${fechaCorta(g.vence)}. ¿Te agendamos tu cita? ${BASE}regalo/?g=${g.codigo}` : textoRegalo(g.para, g.de, BASE + 'regalo/?g=' + g.codigo);
     const activa = st === 'activa' || st === 'pronto';
-    return `<li class="rg"><div class="info"><b>Para ${esc(g.para)}</b>
+    return `<li class="rg"><div class="info"><b>Para ${esc(g.para)}${g.servicio ? ' · ' + esc(g.servicio) : ''}</b>
       <span>${g.de ? 'De ' + esc(g.de) + ' · ' : ''}${st === 'usada' || st === 'anulada' ? dinero(g.monto) : 'quedan ' + dinero(g.saldo) + ' de ' + dinero(g.monto)} · ${cuando}</span></div>
       <div class="rg-acc"><span class="estado ${st === 'anulada' ? 'usada' : st}">${et}</span>
       ${g.completo === false ? '' : `<details class="menu"><summary aria-label="Más opciones">⋯</summary><div class="menu-op">
