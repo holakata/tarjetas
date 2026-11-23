@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261123202307">
+<meta name="kata-version" content="20261123202829">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Acceso clientes · Kata Studio</title>
@@ -275,18 +275,29 @@ document.addEventListener('fullscreenchange', () => { if (!document.fullscreenEl
 
 /* ---------- Canjear ---------- */
 function canjear() {
-  $('#cont').innerHTML = `<div id="encab"><h2 class="tit">${MODO() === 'cliente' ? 'Canjear' : 'Escanear cliente'}</h2><p class="sub">${MODO() === 'cliente' ? 'Premios, regalos de cumpleaños y tarjetas de regalo se canjean igual: escanea el código que te muestre o escríbelo.' : 'Busca al cliente por su WhatsApp, nombre o código. La cámara es solo para tarjetas de regalo y premios/cumpleaños/club, que sí muestran un código para escanear.'}</p></div>
-    <div class="grid2" id="buscador"><div class="tarjeta"><div id="lector"></div><p class="nota" id="camnota" style="margin-top:10px">El navegador te va a pedir permiso para usar la cámara.</p>
-      <button class="btn claro ancho" id="camBtn" style="margin-top:10px" onclick="iniciarLector()">Abrir cámara</button></div>
-    <div>${MODO() !== 'cliente' ? `<div class="tarjeta" style="margin-bottom:16px"><label for="bq">Buscar por WhatsApp, nombre o código (JB0001, CL0003...)</label><input id="bq" inputmode="search" autocomplete="off" placeholder="Ej. 6123, Carla o JB0001">
-      <ul class="lista" id="bres"></ul></div>` : ''}
-      <div class="tarjeta"><label for="cod">${MODO() !== 'cliente' ? 'O escribe el código' : 'Código del cliente'}</label><input id="cod" class="codigo-in" maxlength="6" autocomplete="off" placeholder="······">
+  if (MODO() === 'cliente') {
+    // Tablet en modo autoservicio: el cliente escanea o escribe el código que le muestra su propia tarjeta.
+    $('#cont').innerHTML = `<div id="encab"><h2 class="tit">Canjear</h2><p class="sub">Premios, regalos de cumpleaños y tarjetas de regalo se canjean igual: escanea el código que te muestre o escríbelo.</p></div>
+      <div class="grid2" id="buscador"><div class="tarjeta"><div id="lector"></div><p class="nota" id="camnota" style="margin-top:10px">El navegador te va a pedir permiso para usar la cámara.</p>
+        <button class="btn claro ancho" id="camBtn" style="margin-top:10px" onclick="iniciarLector()">Abrir cámara</button></div>
+      <div><div class="tarjeta"><label for="cod">Código del cliente</label><input id="cod" class="codigo-in" maxlength="6" autocomplete="off" placeholder="······">
       <button class="btn ancho" style="margin-top:12px" onclick="buscar($('#cod').value)">Buscar</button></div></div></div>
+      <div id="res" class="res-solo"></div>`;
+    new MutationObserver(() => { const hay = $('#res') && $('#res').innerHTML.trim() !== ''; const b = $('#buscador'); if (!b) return; b.classList.toggle('oculto', hay); $('#encab').classList.toggle('oculto', hay); if (hay) { detenerLector(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }).observe($('#res'), { childList: true });
+    $('#cod').addEventListener('keydown', (e) => { if (e.key === 'Enter') buscar(e.target.value); });
+    return;
+  }
+  // Recepción: el cliente ya no trae ningún QR (su tarjeta muestra su código fijo), así que no hace falta cámara aquí.
+  // Un solo buscador: WhatsApp, nombre o código (de cliente o de un canje) van en el mismo campo.
+  $('#cont').innerHTML = `<div id="encab"><h2 class="tit">Escanear cliente</h2><p class="sub">Busca al cliente por su WhatsApp, nombre o código.</p></div>
+    <div class="grid2" id="buscador"><div class="tarjeta"><label for="bq">Buscar cliente</label><input id="bq" inputmode="search" autocomplete="off" placeholder="Buscar cliente">
+    <ul class="lista" id="bres"></ul>
+    <button class="btn ancho" style="margin-top:12px" onclick="buscarCod()">Buscar</button></div></div>
     <div id="res" class="res-solo"></div>`;
   // Cuando aparece un cliente (o una tarjeta de regalo) se oculta todo lo de buscar; «Siguiente cliente» lo vuelve a mostrar.
-  new MutationObserver(() => { const hay = $('#res') && $('#res').innerHTML.trim() !== ''; const b = $('#buscador'); if (!b) return; b.classList.toggle('oculto', hay); $('#encab').classList.toggle('oculto', hay); if (hay) { detenerLector(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }).observe($('#res'), { childList: true });
-  $('#cod').addEventListener('keydown', (e) => { if (e.key === 'Enter') buscar(e.target.value); });
+  new MutationObserver(() => { const hay = $('#res') && $('#res').innerHTML.trim() !== ''; const b = $('#buscador'); if (!b) return; b.classList.toggle('oculto', hay); $('#encab').classList.toggle('oculto', hay); if (hay) window.scrollTo({ top: 0, behavior: 'smooth' }); }).observe($('#res'), { childList: true });
   const bq = $('#bq'); if (!bq) return;
+  bq.addEventListener('keydown', (e) => { if (e.key === 'Enter') buscarCod(); });
   let t = null;
   bq.oninput = () => { clearTimeout(t); t = setTimeout(async () => {
     const q = bq.value.trim(); if (q.length < 2) { $('#bres').innerHTML = ''; return; }
@@ -296,6 +307,13 @@ function canjear() {
         : '<li class="vacio">No hay clientes con ese dato. Si es su primera vez, que escanee el QR para crear su tarjeta.</li>';
     } catch (e) { toast(msg(e), 'mal'); }
   }, 250); };
+}
+// Botón «Buscar»: si parece un código completo (de cliente o de un canje de premio/regalo/club), lo busca por ese camino;
+// si no, el resultado ya aparece solo mientras se escribe (lista de clientes que calzan).
+function buscarCod() {
+  const v = ($('#bq') ? $('#bq').value : '').trim();
+  if (v.replace(/\s/g, '').length >= 6) { buscar(v); return; }
+  toast('Escribe el WhatsApp, el nombre o el código completo del cliente, o elige uno de la lista.', 'mal');
 }
 async function abrirFicha(tel) {
   try { const f = await rpc('ficha_abrir', { p_tel: tel }); if ($('#bq')) { $('#bq').value = ''; $('#bres').innerHTML = ''; } ficha(f); }
@@ -312,7 +330,8 @@ async function detenerLector() { if (lector) { try { await lector.stop(); lector
 
 function nuevoCliente() {
   $('#res').innerHTML = ''; if ($('#cod')) $('#cod').value = '';
-  if (MODO() === 'recepcion') { const b = $('#bq'); if (b) b.focus(); } else iniciarLector();
+  if (MODO() === 'cliente') { iniciarLector(); return; }
+  const b = $('#bq'); if (b) { b.value = ''; b.focus(); }
 }
 function ficha(f) {
   const meta = f.meta, V = f.vip, llenos = f.premios_listos > 0 && f.sellos === 0 ? meta : f.sellos;
@@ -329,7 +348,10 @@ function ficha(f) {
   (f.detalles || []).filter((d) => d.listos > 0).forEach((d) => (acc += fila('Visita ' + d.en + ': ' + esc(d.corto || d.texto || ''), esc(NEG.config.detalle_nota || d.texto || '') + (d.listos > 1 ? ' · tiene ' + d.listos + ' pendientes' : ''), `<button class="btn marca" onclick="accion('${f.codigo}','detalle',${esc(JSON.stringify(String(d.en)))})">Aplicar</button>`)));
   if (f.premios_listos > 0) acc += fila('Premio listo', esc(f.premio || ''), `<button class="btn marca" onclick="accion('${f.codigo}','premio')">Entregar premio</button>`);
   if (f.cumple_regalo) acc += fila('Cumpleaños', esc(f.cumple_regalo) + (f.cumple_hasta && f.cumple_hasta !== hoyPty() ? ' · vale hasta el ' + fechaCorta(f.cumple_hasta) : ' · vale hoy') + (V && V.nivel === 'gold' ? ' · más su detalle Gold' : ''), `<button class="btn marca" onclick="accion('${f.codigo}','cumple')">Entregar regalo</button>`);
-  $('#res').innerHTML = `<div class="tarjeta resultado"><span class="tipo">${V && V.miembro ? 'Miembro ' + esc(V.nombre) + (V.hasta ? ' · hasta el ' + fechaCorta(V.hasta) : '') : 'Cliente'}</span>
+  // Descuento de la membresía: siempre visible junto al nombre (no solo dentro de la fila con el botón),
+  // para que no se le pase a recepción aunque no toque el botón «Aplicar descuento».
+  const descBen = V && V.miembro ? (V.beneficios || []).find((b) => /descuento/i.test(b)) : null;
+  $('#res').innerHTML = `<div class="tarjeta resultado"><span class="tipo">${V && V.miembro ? 'Miembro ' + esc(V.nombre) + (V.hasta ? ' · hasta el ' + fechaCorta(V.hasta) : '') : 'Cliente'}</span>${descBen ? ` <span class="chip ${esc(V.nivel || 'club')}" style="margin-left:6px">${esc(descBen)}</span>` : ''}
     <h3>${esc(f.nombre)}</h3><p class="det">${telBonito(f.tel)}${f.codigo_corto ? ' · ' + esc(f.codigo_corto) : ''} · ${f.total_visitas} ${f.total_visitas === 1 ? 'visita' : 'visitas'} · cliente desde ${fechaCorta(f.cliente_desde)}</p>
     <div class="puntos" style="margin-bottom:14px">${Array.from({ length: meta }, (_, i) => `<i class="${i < llenos ? 'on' : ''}"></i>`).join('')}</div>
     ${acc}<p class="nota" style="margin-top:10px">Suma la visita solo si es una compra nueva.</p><div id="sumaForm"></div><div id="renov"></div>
