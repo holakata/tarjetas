@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261123200726">
+<meta name="kata-version" content="20261123201952">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#075F7A" data-marca>
 <title>Mi tarjeta</title>
@@ -75,6 +75,8 @@
   .s.det { border-style: solid; border-color: rgba(255,255,255,.85); font-size: 12px; font-weight: 700; color: #fff; }
   .s.meta { border-style: solid; border-color: rgba(255,255,255,.85); }
   .s.meta svg { width: 50%; height: 50%; color: #fff; opacity: .9; }
+  .s.meta.foto { background: rgba(8,32,54,.55); box-shadow: inset 0 0 0 1px rgba(255,255,255,.25); }
+  .s.meta.foto img { width: 74%; height: 74%; object-fit: contain; }
   .s.nuevo { animation: pop .7s cubic-bezier(.3,1.7,.5,1); }
   @keyframes pop { 0% { transform: scale(.2); opacity: 0; } 60% { transform: scale(1.18); } 100% { transform: scale(1); opacity: 1; } }
   .f-pie { margin-top: 14px; display: flex; justify-content: flex-end; align-items: center; font-size: 12px; min-height: 26px; }
@@ -244,7 +246,7 @@ const I = {
 const ICONOS_SELLO = { detox: 'iconos-sellos/detox.png', facial: 'iconos-sellos/facial.png', masaje: 'iconos-sellos/masaje.png' };
 function selloImg(nombre) {
   const src = ICONOS_SELLO[nombre];
-  return src ? `<img src="${src}" alt="" style="width:76%;height:76%;object-fit:contain">` : null;
+  return src ? `<img src="${src}" alt="">` : null;
 }
 
 async function iniciar() {
@@ -291,10 +293,10 @@ function pintar(animar = false) {
     if (i <= llenos) celdas += `<div class="s on${animar && i === llenos ? ' nuevo' : ''}">${I.loto}</div>`;
     else if (i === meta) {
       const img = selloImg(E.premio_icono);
-      celdas += img ? `<div class="s meta">${img}</div>` : `<div class="s meta det">${esc(E.premio_corto || 'Premio')}</div>`;
+      celdas += img ? `<div class="s meta foto">${img}</div>` : `<div class="s meta det">${esc(E.premio_corto || 'Premio')}</div>`;
     } else {
       const d = (E.detalles || []).find((d) => d.en === i);
-      if (d) { const img = selloImg(d.icono); celdas += img ? `<div class="s meta">${img}</div>` : `<div class="s det">${esc(d.corto || '')}</div>`; }
+      if (d) { const img = selloImg(d.icono); celdas += img ? `<div class="s meta foto">${img}</div>` : `<div class="s det">${esc(d.corto || '')}</div>`; }
       else celdas += `<div class="s"></div>`;
     }
   }
@@ -502,8 +504,8 @@ function bienvenida() {
   let celdas = '';
   for (let i = 1; i <= meta; i++) {
     const d = detalles.find((d) => d.en === i);
-    if (i === meta) { const img = selloImg(c.premio_icono); celdas += img ? `<div class="s meta">${img}</div>` : `<div class="s meta det">${esc(c.premio_corto || c.premio || 'Premio')}</div>`; }
-    else if (d) { const img = selloImg(d.icono); celdas += img ? `<div class="s meta">${img}</div>` : `<div class="s det">${esc(d.corto || '')}</div>`; }
+    if (i === meta) { const img = selloImg(c.premio_icono); celdas += img ? `<div class="s meta foto">${img}</div>` : `<div class="s meta det">${esc(c.premio_corto || c.premio || 'Premio')}</div>`; }
+    else if (d) { const img = selloImg(d.icono); celdas += img ? `<div class="s meta foto">${img}</div>` : `<div class="s det">${esc(d.corto || '')}</div>`; }
     else celdas += `<div class="s${i <= 2 ? ' on' : ''}">${i <= 2 ? I.loto : ''}</div>`;
   }
   $('#vista').innerHTML = `<div style="height:26px"></div>
