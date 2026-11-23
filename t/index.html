@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261123201952">
+<meta name="kata-version" content="20261123202307">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#075F7A" data-marca>
 <title>Mi tarjeta</title>
@@ -72,6 +72,7 @@
   .s { aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed rgba(255,255,255,.45); display: grid; place-items: center; }
   .s.on { border: 0; background: #fff; color: var(--marca-2); box-shadow: 0 4px 10px rgba(0,0,0,.15); }
   .s.on svg { width: 52%; height: 52%; }
+  .s.on img { width: 62%; height: 62%; object-fit: contain; }
   .s.det { border-style: solid; border-color: rgba(255,255,255,.85); font-size: 12px; font-weight: 700; color: #fff; }
   .s.meta { border-style: solid; border-color: rgba(255,255,255,.85); }
   .s.meta svg { width: 50%; height: 50%; color: #fff; opacity: .9; }
@@ -240,7 +241,6 @@ const I = {
   qr: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="6" height="6" rx="1"/><rect x="14.5" y="3.5" width="6" height="6" rx="1"/><rect x="3.5" y="14.5" width="6" height="6" rx="1"/><path d="M14.5 14.5h2v2M20.5 14.5v6h-6v-3"/></svg>',
   wa: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2a9.7 9.7 0 0 0-8.4 14.6L2.3 21.8l5.1-1.3A9.7 9.7 0 1 0 12 2.2zm0 17.7c-1.5 0-3-.4-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 19.9zm4.4-6c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8.9c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1l-.5-.3z"/></svg>',
   fl: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
-  loto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20c-4 0-7-2.3-7-5.2 2.7 0 5 1 7 2.9 2-1.9 4.3-2.9 7-2.9 0 2.9-3 5.2-7 5.2z"/><path d="M12 17.5V13M12 13c0-4 1.6-6.8 4-8.7-1 3.6-.6 6.4 1.3 9M12 13c0-4-1.6-6.8-4-8.7 1 3.6.6 6.4-1.3 9"/></svg>',
 };
 
 const ICONOS_SELLO = { detox: 'iconos-sellos/detox.png', facial: 'iconos-sellos/facial.png', masaje: 'iconos-sellos/masaje.png' };
@@ -290,7 +290,7 @@ function pintar(animar = false) {
   const faltan = meta - E.sellos;
   let celdas = '';
   for (let i = 1; i <= meta; i++) {
-    if (i <= llenos) celdas += `<div class="s on${animar && i === llenos ? ' nuevo' : ''}">${I.loto}</div>`;
+    if (i <= llenos) celdas += `<div class="s on${animar && i === llenos ? ' nuevo' : ''}"><img src="iconos-sellos/loto.png" alt=""></div>`;
     else if (i === meta) {
       const img = selloImg(E.premio_icono);
       celdas += img ? `<div class="s meta foto">${img}</div>` : `<div class="s meta det">${esc(E.premio_corto || 'Premio')}</div>`;
@@ -506,7 +506,7 @@ function bienvenida() {
     const d = detalles.find((d) => d.en === i);
     if (i === meta) { const img = selloImg(c.premio_icono); celdas += img ? `<div class="s meta foto">${img}</div>` : `<div class="s meta det">${esc(c.premio_corto || c.premio || 'Premio')}</div>`; }
     else if (d) { const img = selloImg(d.icono); celdas += img ? `<div class="s meta foto">${img}</div>` : `<div class="s det">${esc(d.corto || '')}</div>`; }
-    else celdas += `<div class="s${i <= 2 ? ' on' : ''}">${i <= 2 ? I.loto : ''}</div>`;
+    else celdas += `<div class="s${i <= 2 ? ' on' : ''}">${i <= 2 ? '<img src="iconos-sellos/loto.png" alt="">' : ''}</div>`;
   }
   $('#vista').innerHTML = `<div style="height:26px"></div>
     <div class="wallet uno" style="pointer-events:none"><div class="pase"><div class="giro"><div class="cara sellos-f">
