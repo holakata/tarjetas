@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261123161100">
+<meta name="kata-version" content="20261123163141">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#075F7A" data-marca>
 <title>Mi tarjeta</title>
@@ -54,6 +54,10 @@
   .atras .num { display: block; margin: 2px 0 8px; font-weight: 700; font-size: 17px; color: var(--tinta); }
   .atras .mini { font-size: 11px; color: #9AA1AA; margin-top: 10px; display: flex; align-items: center; gap: 5px; }
   .atras .mini svg { width: 12px; height: 12px; }
+  .atras .cod-grande { font-family: ui-monospace, Menlo, monospace; font-size: 28px; letter-spacing: .08em; font-weight: 700; color: var(--marca-2); margin: 4px 0 2px; }
+  .vip-lema { font-size: 12px; opacity: .85; margin-top: 2px; line-height: 1.3; }
+  .ben-atras { font-size: 13px; line-height: 1.6; color: var(--tinta); text-align: left; max-height: 148px; overflow-y: auto; }
+  .ben-atras p { margin: 0 0 2px; } .ben-atras p::before { content: "· "; color: var(--marca-2); font-weight: 700; }
 
   .sellos-f { background: var(--marca); background: linear-gradient(150deg, var(--marca-claro, var(--marca)) 0%, var(--marca) 55%, var(--marca-2) 100%); border: 1px solid rgba(255,255,255,.22); color: #fff; padding: 18px 20px; display: flex; flex-direction: column; }
   .sellos-f::after { content: ""; position: absolute; right: -60px; bottom: -80px; width: 220px; height: 220px; border-radius: 50%; background: radial-gradient(circle, var(--acento-glow, rgba(255,255,255,.15)), transparent 70%); pointer-events: none; }
@@ -209,7 +213,7 @@ const slug = params.get('n') || 'jazmin';
 const tokenQR = params.get('q');
 const CLAVE = 'kata-tarjeta-' + slug;
 if (params.get('k')) store.set(CLAVE, params.get('k'));
-let NEG = null, ESTADO = null, sondeo = null, qrTimer = null, vigia = null;
+let NEG = null, ESTADO = null, sondeo = null, vigia = null;
 const MODO = () => (NEG && NEG.config.modo) || 'cliente';
 const recep = () => MODO() !== 'cliente';
 
@@ -273,17 +277,17 @@ function pintar(animar = false) {
     else celdas += `<div class="s"></div>`;
   }
   const vipActivo = !!(V && V.miembro), giraSellos = recep() && !vipActivo, giraVip = recep() && vipActivo;
-  const atras = `<div class="cara atras"><div class="qr" data-qr></div><div class="cod" data-cod>······</div></div>`;
+  const atras = `<div class="cara atras"><h3>Tu código</h3><span class="num cod-grande">${esc(E.codigo_corto || '')}</span><p>Muéstraselo a recepción</p></div>`;
+  const atrasVip = `<div class="cara atras"><h3>Beneficios</h3><div class="ben-atras">${(V && V.beneficios || []).map((b) => `<p>${esc(b)}</p>`).join('')}</div><span class="num cod-grande" style="margin-top:10px">${esc(E.codigo_corto || '')}</span></div>`;
   const pSellos = `<div class="pase" id="p0"><div class="giro${giraSellos ? '' : ' fija'}" onclick="voltear(this)">
       <div class="cara sellos-f"><div class="f-top"><div><small>Tarjeta de cliente</small><b>${esc(E.nombre)}</b></div><div class="cuenta">${llenos}<span> / ${meta}</span></div></div>
         <div class="grid${meta > 6 ? (meta > 8 ? ' m10' : ' m8') : ''}">${celdas}</div>
         <div class="f-pie"><span>${esc(E.premio || '')}</span>${giraSellos ? `<span class="voltear">${I.qr}</span>` : ''}</div></div>
       ${giraSellos ? atras : ''}</div></div>`;
   const pVip = V && V.miembro ? `<div class="pase" id="p1"><div class="giro" onclick="voltear(this)">
-      <div class="cara vip-f ${esc(V.nivel || '')}"><small>Miembro</small><h3>${esc(V.nombre)}</h3><div class="vig">${vigencia(V)}</div>
-        <div class="ben">${(V.beneficios || []).slice(0, 3).map((b) => `<span>${esc(b)}</span>`).join('')}</div>
-        <div class="f-pie" style="justify-content:flex-end"><span class="voltear">${I.qr}</span></div></div>
-      ${giraVip ? atras : ''}</div></div>` : '';
+      <div class="cara vip-f ${esc(V.nivel || '')}"><small>Miembro</small><h3>${esc(V.nombre)}</h3>${V.lema ? `<p class="vip-lema">${esc(V.lema)}</p>` : ''}<div class="vig">${vigencia(V)}</div>
+        <div class="f-pie"><span>${esc(E.codigo_corto || '')}</span><span class="voltear">${I.qr}</span></div></div>
+      ${giraVip ? atrasVip : ''}</div></div>` : '';
 
   const avisos = [];
   if (E.premios_listos > 0) avisos.push(`<button class="aviso brilla" onclick="hojaPremio('premio')"><span class="ic">${I.regalo}</span><span><b>Tu premio está listo</b><span>${esc(E.premio || '')}</span></span><span class="fl">${I.fl}</span></button>`);
@@ -318,7 +322,7 @@ function pintar(animar = false) {
   }
   const w = $('#wallet');
   if (w && pVip) w.onscroll = () => { const i = w.scrollLeft > (w.scrollWidth - w.clientWidth) / 2 ? 1 : 0; $$('#pn i').forEach((d, k) => d.classList.toggle('on', k === i)); };
-  if (recep()) { cargarQR(); vigilar(); }
+  if (recep()) { vigilar(); }
   if (!store.get('kata-vio-guardar-' + slug)) { store.set('kata-vio-guardar-' + slug, '1'); setTimeout(hojaGuardar, 1500); }
 }
 
@@ -340,16 +344,6 @@ function voltear(el) {
   if (!recep()) { if (el.closest('#p1')) pedir('vip'); return; }
   el.parentElement.classList.toggle('vuelta');
   try { navigator.vibrate && navigator.vibrate(10); } catch (e) {}
-}
-
-async function cargarQR() {
-  clearTimeout(qrTimer);
-  try {
-    const r = await rpc('cliente_qr', { p_key: store.get(CLAVE) });
-    $$('[data-qr]').forEach((b) => (b.innerHTML = qrSVG(r.codigo, 200)));
-    $$('[data-cod]').forEach((b) => (b.textContent = r.codigo));
-    qrTimer = setTimeout(cargarQR, Math.max(30000, new Date(r.expira) - Date.now() - 55000));
-  } catch (e) { qrTimer = setTimeout(cargarQR, 15000); }
 }
 
 function huella(E) { return [E.visitas[0] && E.visitas[0].sellos, E.sellos, E.premios_listos, E.detalles_listos, E.vip && E.vip.nivel, JSON.stringify(E.vip && E.vip.incluidos), E.visitas.length, E.visitas[0] && E.visitas[0].fecha, !!E.cumple_regalo, E.vip && E.vip.miembro, E.vip && E.vip.hasta].join('|'); }
