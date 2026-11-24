@@ -505,22 +505,18 @@ async function pedir(tipo, en) {
 
 /* ---------- Bienvenida, registro y recuperación ---------- */
 function bienvenida() {
-  const c = NEG.config, meta = c.meta || 6, detalles = c.detalles || [];
+  const meta = 6;
   let celdas = '';
   for (let i = 1; i <= meta; i++) {
-    const d = detalles.find((d) => d.en === i);
-    if (i === meta) { const img = selloImg(c.premio_icono); celdas += img ? `<div class="s meta foto">${img}</div>` : `<div class="s meta det">${esc(c.premio_corto || c.premio || 'Premio')}</div>`; }
-    else if (d) { const img = selloImg(d.icono); celdas += img ? `<div class="s meta foto">${img}</div>` : `<div class="s det">${esc(d.corto || '')}</div>`; }
-    else celdas += `<div class="s${i <= 2 ? ' on' : ''}">${i <= 2 ? `<img src="${LOTO_IMG}" alt="">` : ''}</div>`;
+    celdas += `<div class="s${i <= 2 ? ' on' : ''}">${i <= 2 ? `<img src="${LOTO_IMG}" alt="">` : ''}</div>`;
   }
   $('#vista').innerHTML = `<div style="height:26px"></div>
     <div class="wallet uno" style="pointer-events:none"><div class="pase"><div class="giro"><div class="cara sellos-f">
       <div class="f-top"><div><small>Tarjeta de cliente</small><b>Tu nombre</b></div><div class="cuenta">2<span> / ${meta}</span></div></div>
-      <div class="grid${meta > 6 ? (meta > 8 ? ' m10' : ' m8') : ''}">${celdas}</div></div></div></div></div>
+      <div class="grid">${celdas}</div></div></div></div></div>
     <div class="cuerpo bienv">
       <h2>Tu tarjeta de cliente frecuente</h2>
       <p>Cada compra suma un sello.</p>
-      <ul class="reglas"><li><b>Visita ${meta}:</b> ${esc(c.premio || 'un premio')}</li>${detalles.map((d) => `<li><b>Visita ${d.en}:</b> ${esc(d.texto || '')}</li>`).join('')}${(c.dias_dobles || []).includes('3') ? '<li><b>Miércoles:</b> tu visita vale doble</li>' : ''}</ul>
       <button class="btn ancho" onclick="registro()">Crear mi tarjeta</button>
       <button class="btn claro ancho" style="margin-top:10px" onclick="recuperar()">Ya tengo tarjeta</button>
     </div>`;
