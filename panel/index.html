@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src * data: blob:; media-src * blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta charset="utf-8">
-<meta name="kata-version" content="20261123210311">
+<meta name="kata-version" content="20261124193456">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#F6F4F0">
 <title>Acceso clientes · Kata Studio</title>
@@ -185,6 +185,7 @@ function marco() {
       <button class="tab" data-t="clientes">Clientes</button>
       <button class="tab" data-t="regalos"><span class="l">Tarjetas de regalo</span><span class="c">Regalos</span></button>
       <button class="tab" data-t="vip"><span class="l">${esc((NEG.config.vip && NEG.config.vip.nombre) || 'Club')}</span><span class="c">Club</span></button>
+      ${PUEDE('programa') ? '<button class="tab" data-t="programa">Programa</button>' : ''}
       ${PUEDE('resumen') ? '<button class="tab" data-t="dueno">Resumen</button>' : ''}
     </nav></header><main class="cont" id="cont"></main>`;
   $$('.tab').forEach((b) => (b.onclick = () => ir(b.dataset.t)));
@@ -218,7 +219,7 @@ async function ir(t) {
   $$('.tab').forEach((b) => b.classList.toggle('on', b.dataset.t === t));
   clearTimeout(tTimer); clearInterval(cTimer); await detenerLector();
   document.body.classList.remove('full');
-  ({ mostrador, canjear, clientes, regalos, vip, dueno })[t]();
+  ({ mostrador, canjear, clientes, regalos, vip, programa, dueno })[t]();
 }
 
 const MODO = () => (NEG && NEG.config.modo) || 'cliente';
@@ -614,6 +615,36 @@ async function guardarPromos(lista) {
 }
 function quitarPromo(i) { const P = [...(NEG.config.promos || [])]; P.splice(i, 1); guardarPromos(P); }
 
+/* ---------- Programa de sellos (reglas, no diseño) ---------- */
+function programa() {
+  const C = NEG.config;
+  $('#cont').innerHTML = `<div class="tarjeta" style="max-width:480px">
+    <h2 class="tit">Programa de sellos</h2>
+    <p class="sub">Aquí cambias la regla de sellos, el premio y por cuánto tiempo dura. El diseño de la tarjeta (colores, logo, forma del sello) lo maneja Kata Studio.</p>
+    <form id="fprog" novalidate>
+      <div class="campo"><label for="pg-meta">Sellos para ganar el premio</label><input id="pg-meta" type="number" min="2" max="30" value="${C.meta || 6}"></div>
+      <div class="campo"><label for="pg-premio">Premio</label><input id="pg-premio" maxlength="80" placeholder="1 masaje relajante gratis" value="${esc(C.premio_corto || '')}"></div>
+      <div class="campo"><label for="pg-vig">Vigencia del premio en días (opcional)</label><input id="pg-vig" type="number" min="1" max="365" placeholder="Ej: 30" value="${C.vigencia_dias || ''}"></div>
+      <p class="nota" style="margin-top:4px">Si dejas la vigencia vacía, el premio no vence.</p>
+      <p class="error" id="pgerr"></p>
+      <button class="btn ancho" id="pggo">Guardar cambios</button>
+    </form></div>`;
+  $('#fprog').onsubmit = async (ev) => {
+    ev.preventDefault(); $('#pgerr').textContent = '';
+    const meta = +$('#pg-meta').value, premio = $('#pg-premio').value.trim(), vigStr = $('#pg-vig').value.trim();
+    const vig = vigStr ? +vigStr : null;
+    if (!meta || meta < 2 || meta > 30) { $('#pgerr').textContent = msg({ code: 'meta' }); return; }
+    if (!premio) { $('#pgerr').textContent = msg({ code: 'premio' }); return; }
+    if (vig !== null && (vig < 1 || vig > 365)) { $('#pgerr').textContent = msg({ code: 'vigencia' }); return; }
+    $('#pggo').disabled = true;
+    try {
+      const r = await rpc('programa_guardar', { p_meta: meta, p_premio: premio, p_vigencia_dias: vig });
+      NEG.config.meta = r.meta; NEG.config.premio_corto = r.premio_corto; NEG.config.vigencia_dias = r.vigencia_dias;
+      toast('Programa actualizado', 'ok');
+    } catch (e) { $('#pgerr').textContent = msg(e); }
+    $('#pggo').disabled = false;
+  };
+}
 
 function waNum(t) { t = String(t || '').replace(/\D/g, ''); return t.length <= 8 ? '507' + t : t; }
 function textoRegalo(para, de, link) {

@@ -63,6 +63,9 @@ const MENSAJES = {
   promo: 'Puedes tener hasta 6 promociones.',
   no_cliente: 'Ese WhatsApp todavía no tiene tarjeta. Primero el cliente la crea escaneando el QR del mostrador.',
   cantidad: 'Escribe un número de sellos entre 1 y 50.',
+  meta: 'Escoge un número de sellos entre 2 y 30.',
+  premio: 'Escribe el premio.',
+  vigencia: 'Escribe un número de días entre 1 y 365, o déjalo vacío.',
 };
 const msg = (e) => MENSAJES[e.code] || 'Algo no funcionó. Revisa tu conexión e intenta de nuevo.';
 
