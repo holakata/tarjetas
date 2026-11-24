@@ -66,6 +66,11 @@ const MENSAJES = {
   meta: 'Escoge un número de sellos entre 2 y 30.',
   premio: 'Escribe el premio.',
   vigencia: 'Escribe un número de días entre 1 y 365, o déjalo vacío.',
+  detalle: 'Puedes tener hasta 8 premios intermedios.',
+  detalle_en: 'Escoge una visita antes del premio final.',
+  detalle_corto: 'Escribe el texto corto del premio.',
+  detalle_icono: 'Ese ícono no existe todavía.',
+  detalle_repetido: 'Ya hay un premio en esa visita. Quítalo primero si quieres cambiarlo.',
 };
 const msg = (e) => MENSAJES[e.code] || 'Algo no funcionó. Revisa tu conexión e intenta de nuevo.';
 
